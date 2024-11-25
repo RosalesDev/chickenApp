@@ -1,0 +1,45 @@
+<div class="pos-container">
+  <h1>Punto de Venta</h1>
+
+  <div class="scanner">
+    <label for="barcode-input">Escanear Código de Barras:</label>
+    <input
+      id="barcode-input"
+      type="text"
+      #barcodeInput
+      (keyup.enter)="scanProduct(barcodeInput.value); barcodeInput.value = ''"
+      placeholder="Escanea o ingresa un código"
+    />
+  </div>
+
+  <div class="product-list">
+    <h2>Productos Escaneados</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Código</th>
+          <th>Cantidad</th>
+          <th>Precio Unitario</th>
+          <th>Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for(product of scannedProducts(); track product.id){
+        <tr>
+          <td>{{ product.name }}</td>
+          <td>{{ product.barcode }}</td>
+          <td>{{ product.quantity }}</td>
+          <td>{{ product.price | currency }}</td>
+          <td>{{ product.price * product.quantity | currency }}</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="summary">
+    <h3>Subtotal: {{ subtotal() | currency }}</h3>
+    <button (click)="clearCart()">Limpiar Carrito</button>
+  </div>
+</div>
