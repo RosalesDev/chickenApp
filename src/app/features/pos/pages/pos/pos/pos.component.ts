@@ -1,6 +1,7 @@
 import { Component, effect, inject, signal } from '@angular/core';
 import { ProductService } from '../../../services/product.service';
 import { CurrencyPipe } from '@angular/common';
+import { Product } from '../../../../../core/models/product-model';
 
 @Component({
   selector: 'app-pos',
@@ -9,7 +10,7 @@ import { CurrencyPipe } from '@angular/common';
   styleUrl: './pos.component.css',
 })
 export class PosComponent {
-  scannedProducts = signal<any[]>([]); // Lista de productos escaneados
+  scannedProducts = signal<Product[]>([]); // Lista de productos escaneados
   subtotal = signal<number>(0); // Subtotal calculado
   private productService = inject(ProductService); // Inyecta el servicio
 
@@ -17,7 +18,7 @@ export class PosComponent {
     // Recalcular el subtotal automáticamente cuando cambie la lista de productos
     effect(() => {
       const total = this.scannedProducts().reduce(
-        (sum, product) => sum + product.price * product.quantity,
+        (sum, product) => sum + product.price_by_unit! * product.quantity,
         0
       );
       this.subtotal.set(total);

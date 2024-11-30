@@ -30,8 +30,8 @@
           <td>{{ product.name }}</td>
           <td>{{ product.barcode }}</td>
           <td>{{ product.quantity }}</td>
-          <td>{{ product.price | currency }}</td>
-          <td>{{ product.price * product.quantity | currency }}</td>
+          <td>{{ product.price_by_unit | currency }}</td>
+          <td>{{ product.price_by_unit! * product.quantity | currency }}</td>
         </tr>
         }
       </tbody>
