@@ -12,6 +12,7 @@ export const authGuard: CanActivateFn = (route, state) => {
 
   // Decodificar el token y verificar la fecha de expiración
   const tokenData = JSON.parse(atob(token.split('.')[1])); // Decodifica el payload del JWT
+  console.log('Token data: ', tokenData);
   const isExpired = Date.now() >= tokenData.exp * 1000; // Verifica si está expirado
 
   if (isExpired) {

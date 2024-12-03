@@ -15,13 +15,13 @@ export class LoginComponent {
   errorMessage: string = '';
   isLoading: boolean = false;
 
-  constructor(private firestore: AuthService, private router: Router) {}
+  constructor(private authService: AuthService, private router: Router) {}
 
   async login() {
     this.isLoading = true;
     this.errorMessage = '';
     try {
-      const userCredential = await this.firestore.login(
+      const userCredential = await this.authService.login(
         this.email,
         this.password
       );
