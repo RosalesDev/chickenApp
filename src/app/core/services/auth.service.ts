@@ -16,12 +16,19 @@ export class AuthService {
   }
 
   logout() {
+    console.log('Usuairo logueado: ', this.auth.currentUser);
     localStorage.removeItem('token');
     return signOut(this.auth);
   }
 
-  currentUser(): Promise<User | null> {
-    return this.userService.getUser(this.auth.currentUser!.uid);
+  async currentUser(): Promise<User | null> {
+    const cUser = this.auth.currentUser;
+    console.log(cUser);
+    if (!cUser) {
+      return Promise.resolve(null);
+    } else {
+      return this.userService.getUser(cUser.uid);
+    }
     // return this.auth.currentUser;
   }
 }

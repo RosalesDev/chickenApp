@@ -2,6 +2,8 @@ import { Component, effect, inject, signal } from '@angular/core';
 import { ProductService } from '../../../services/product.service';
 import { CurrencyPipe } from '@angular/common';
 import { Product } from '../../../../../core/models/product-model';
+import { AuthService } from '../../../../../core/services/auth.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-pos',
@@ -13,6 +15,8 @@ export class PosComponent {
   scannedProducts = signal<Product[]>([]); // Lista de productos escaneados
   subtotal = signal<number>(0); // Subtotal calculado
   private productService = inject(ProductService); // Inyecta el servicio
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
   constructor() {
     // Recalcular el subtotal automáticamente cuando cambie la lista de productos
@@ -54,5 +58,10 @@ export class PosComponent {
   clearCart(): void {
     this.scannedProducts.set([]); // Limpia los productos
     this.subtotal.set(0); // Reinicia el subtotal
+  }
+
+  logOut() {
+    this.authService.logout();
+    this.router.navigate(['auth/login']);
   }
 }
