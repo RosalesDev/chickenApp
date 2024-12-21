@@ -1,9 +1,3 @@
-<div class="row text-end mt-4 me-4">
-  <div class="col">
-    <button class="btn-danger" (click)="logOut()">Logout</button>
-  </div>
-</div>
-
 <div class="pos-container">
   <h1>Punto de Venta</h1>
 
@@ -20,7 +14,7 @@
 
   <div class="product-list">
     <h2>Productos Escaneados</h2>
-    <table>
+    <table class="table table-striped">
       <thead>
         <tr>
           <th>Producto</th>
@@ -55,6 +49,7 @@
         }
       </tbody>
     </table>
+    <app-modal-spinner></app-modal-spinner>
   </div>
 
   <div class="summary">

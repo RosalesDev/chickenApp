@@ -36,7 +36,7 @@ export class LoginComponent {
       // this.loggedUser.set(await this.authService.currentUser());
       // console.log('Current user login successful', this.loggedUser());
       localStorage.setItem('token', await userCredential.user.getIdToken());
-      this.router.navigate(['/pos']);
+      this.router.navigate(['/home']);
     } catch (error: any) {
       console.error('Login error:', error);
       this.errorMessage = error.message; // Muestra el mensaje de error

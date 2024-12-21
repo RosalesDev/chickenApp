@@ -1,14 +1,15 @@
 import { Component, effect, inject, signal } from '@angular/core';
-import { ProductService } from '../../../services/product.service';
+import { ProductService } from '../../services/product.service';
 import { CurrencyPipe } from '@angular/common';
-import { Product } from '../../../../../core/models/product-model';
-import { AuthService } from '../../../../../core/services/auth.service';
+import { Product } from '../../../../core/models/product-model';
+import { AuthService } from '../../../../core/services/auth.service';
 import { Router } from '@angular/router';
 import { trigger, style, animate, transition } from '@angular/animations';
+import { ModalSpinnerComponent } from './components/modal-spinner/modal-spinner.component';
 
 @Component({
   selector: 'app-pos',
-  imports: [CurrencyPipe],
+  imports: [CurrencyPipe, ModalSpinnerComponent],
   templateUrl: './pos.component.html',
   styleUrl: './pos.component.css',
   animations: [
@@ -35,8 +36,6 @@ export class PosComponent {
   scannedProducts = signal<Product[]>([]); // Lista de productos escaneados
   subtotal = signal<number>(0); // Subtotal calculado
   private productService = inject(ProductService); // Inyecta el servicio
-  private authService = inject(AuthService);
-  private router = inject(Router);
 
   constructor() {
     // Recalcular el subtotal automáticamente cuando cambie la lista de productos
@@ -50,6 +49,7 @@ export class PosComponent {
   }
 
   async scanProduct(barcode: string): Promise<void> {
+    this.showModal(); // Muestra el modal
     const existingProduct = this.scannedProducts().find(
       (product) => product.barcode === barcode
     );
@@ -62,6 +62,7 @@ export class PosComponent {
           product.barcode === barcode ? existingProduct : product
         )
       );
+      this.hideModal(); // Oculta el modal
     } else {
       // Busca el producto en la base de datos
       const product = await this.productService.getProductByBarcode(barcode);
@@ -72,6 +73,7 @@ export class PosComponent {
         };
         this.scannedProducts.update((products) => [...products, newProduct]);
       }
+      this.hideModal(); // Oculta el modal
     }
   }
 
@@ -98,8 +100,21 @@ export class PosComponent {
     );
   }
 
-  logOut() {
-    this.authService.logout();
-    this.router.navigate(['auth/login']);
+  private showModal(): void {
+    const modalElement = document.getElementById('loadingModal');
+    if (modalElement) {
+      modalElement.classList.add('show'); // Agrega la clase 'show'
+      modalElement.style.display = 'block'; // Muestra el modal
+      document.body.classList.add('modal-open'); // Evita el scroll en el fondo
+    }
+  }
+
+  private hideModal(): void {
+    const modalElement = document.getElementById('loadingModal');
+    if (modalElement) {
+      modalElement.classList.remove('show'); // Quita la clase 'show'
+      modalElement.style.display = 'none'; // Oculta el modal
+      document.body.classList.remove('modal-open'); // Restaura el scroll
+    }
   }
 }
