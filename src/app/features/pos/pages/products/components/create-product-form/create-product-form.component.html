@@ -1,0 +1,71 @@
+<!-- Formulario para crear nuevos productos -->
+<div class="card mt-5 shadow w-50 m-auto">
+  <div class="card-body">
+    <form
+      class="needs-validation"
+      [formGroup]="form()"
+      (ngSubmit)="createProduct()"
+      novalidate
+    >
+      <div class="form-floating mb-3">
+        <input
+          type="text"
+          id="barcode"
+          autocomplete="off"
+          placeholder="Escanéa el Código de barras"
+          class="form-control"
+          formControlName="barcode"
+        />
+        @if (form().get('barcode')!.hasError('required')) {
+        <div>Name is required.</div>
+        }
+        <label for="barcode">Escanéa el Código de barras</label>
+      </div>
+      @if (form()['controls']['barcode'].value) {
+      <div class="container">
+        <div class="form-floating mb-3">
+          <input
+            type="text"
+            id="name"
+            autocomplete="off"
+            placeholder="Nombre del producto"
+            class="form-control"
+            formControlName="name"
+          />
+          <label for="name">Nombre</label>
+        </div>
+        <div class="form-floating mb-3">
+          <input
+            type="number"
+            id="availability_in_deposit"
+            class="form-control"
+            formControlName="availability_in_deposit"
+          />
+          <label for="availability_in_deposit" class="form-label">Stock</label>
+        </div>
+        <div class="form-floating mb-3">
+          <input
+            type="currency"
+            id="price_by_unit"
+            class="form-control"
+            formControlName="price_by_unit"
+          />
+          <label for="price_by_unit" class="form-label"
+            >Precio por Unidad</label
+          >
+        </div>
+        <div class="form-floating mb-3">
+          <input
+            type="currency"
+            id="price_by_kg"
+            class="form-control"
+            formControlName="price_by_kg"
+          />
+          <label for="price_by_kg" class="form-label">Precio por Kg</label>
+        </div>
+      </div>
+      }
+      <button type="submit" class="btn btn-primary">Crear</button>
+    </form>
+  </div>
+</div>

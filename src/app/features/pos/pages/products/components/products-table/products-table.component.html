@@ -1,0 +1,31 @@
+<table class="table">
+  <thead>
+    <tr class="text-center">
+      <th scope="col">INICIALES</th>
+      <th scope="col">NOMBRE</th>
+      <th scope="col">STOCK</th>
+      <th scope="col">PRECIO POR UNIDAD</th>
+      <th scope="col">PRECIO POR KG</th>
+      @if (isAdmin) {
+      <th scope="col">ACCIONES</th>
+      }
+    </tr>
+  </thead>
+  <tbody>
+    @for(product of products; track product.id){
+    <tr class="text-center">
+      <td>{{ product.initials }}</td>
+      <td>{{ product.name }}</td>
+      <td>{{ product.availability_in_deposit }}</td>
+      <td>${{ product.price_by_unit }}</td>
+      <td>${{ product.price_by_kg }}</td>
+      @if(isAdmin){
+      <td>
+        <button class="btn btn-primary btn-sm">Editar</button>
+        <button class="btn btn-danger btn-sm">Eliminar</button>
+      </td>
+      }
+    </tr>
+    }
+  </tbody>
+</table>

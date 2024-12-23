@@ -1,20 +1,21 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Product } from '../../../../core/models/product-model';
 import { ProductService } from '../../services/product.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ProductFormComponent } from './components/product-form/product-form.component';
+import { RouterLink } from '@angular/router';
+import { ProductsTableComponent } from './components/products-table/products-table.component';
 
 @Component({
   selector: 'app-products',
-  imports: [ProductFormComponent],
+  imports: [RouterLink, ProductsTableComponent],
   templateUrl: './products.component.html',
   styleUrl: './products.component.css',
 })
-export class ProductsComponent implements OnInit {
+export class ProductsComponent {
   private productService = inject(ProductService);
   products: Product[] = [];
   searchQuery = '';
-  isAdmin = false; // Cambia esto según tu lógica de roles
+  isAdmin = true; // Cambia esto según tu lógica de roles
   lastVisible: any;
   limit = 10; // Tamaño de página
   isSearching = false; // Indica si se está buscando
@@ -32,9 +33,9 @@ export class ProductsComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {
-    this.loadProducts();
-  }
+  // ngOnInit(): void {
+  //   this.loadProducts();
+  // }
 
   loadProducts(): void {
     this.isLoading = true;

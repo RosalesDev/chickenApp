@@ -4,6 +4,7 @@ import { HomeComponent } from './features/pos/pages/home/home.component';
 import { authGuard } from './core/guards/auth.guard';
 import { PosComponent } from './features/pos/pages/pos/pos.component';
 import { ProductsComponent } from './features/pos/pages/products/products.component';
+import { CreateProductFormComponent } from './features/pos/pages/products/components/create-product-form/create-product-form.component';
 
 export const routes: Routes = [
   {
@@ -30,7 +31,21 @@ export const routes: Routes = [
       {
         path: 'products',
         title: 'Productos',
-        component: ProductsComponent,
+        loadComponent: () =>
+          import('./features/pos/pages/products/products.component').then(
+            (m) => m.ProductsComponent
+          ),
+        // component: ProductsComponent,
+        //canActivate: [authGuard],
+      },
+      {
+        path: 'create-product',
+        title: 'Nuevo Producto',
+        loadComponent: () =>
+          import(
+            './features/pos/pages/products/components/create-product-form/create-product-form.component'
+          ).then((m) => m.CreateProductFormComponent),
+        // component: CreateProductFormComponent,
         //canActivate: [authGuard],
       },
     ],
