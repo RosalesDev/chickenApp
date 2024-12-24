@@ -1,59 +1,70 @@
-<div class="pos-container">
-  <h1>Punto de Venta</h1>
+<div class="card shadow mx-3">
+  <div class="card-header">Nueva Venta</div>
+  <div class="card-body">
+    <div class="form-floating mb-3">
+      <input
+        id="barcode-input"
+        type="text"
+        class="form-control"
+        #barcodeInput
+        (keyup.enter)="scanProduct(barcodeInput.value); barcodeInput.value = ''"
+        placeholder="Escanea o ingresa un código"
+      />
+      <label for="barcode-input">Escanea o ingresa un código</label>
+    </div>
 
-  <div class="scanner">
-    <label for="barcode-input">Escanear Código de Barras:</label>
-    <input
-      id="barcode-input"
-      type="text"
-      #barcodeInput
-      (keyup.enter)="scanProduct(barcodeInput.value); barcodeInput.value = ''"
-      placeholder="Escanea o ingresa un código"
-    />
-  </div>
-
-  <div class="product-list">
-    <h2>Productos Escaneados</h2>
-    <table class="table table-striped">
-      <thead>
-        <tr>
-          <th>Producto</th>
-          <th>Código</th>
-          <th>Cantidad</th>
-          <th>Precio Unitario</th>
-          <th>Subtotal</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for(product of scannedProducts(); track product.id){
-        <tr [@fadeOutAnimation]>
-          <td>{{ product.name }}</td>
-          <td>{{ product.barcode }}</td>
-          <td [@quantityAnimation]="product.quantity">
-            {{ product.quantity }}
-          </td>
-          <td>{{ product.price_by_unit | currency }}</td>
-          <td>{{ product.price_by_unit! * product.quantity | currency }}</td>
-          <td class="text-center">
-            <i
-              [class]="
-                product.quantity > 1 ? 'bi bi-dash-circle' : 'bi bi-trash'
-              "
-              [title]="product.quantity > 1 ? 'Restar' : 'Eliminar'"
-              (click)="removeProduct(product.id)"
-              style="cursor: pointer; color: red"
-            ></i>
-          </td>
-        </tr>
-        }
-      </tbody>
-    </table>
-    <app-modal-spinner></app-modal-spinner>
-  </div>
-
-  <div class="summary">
-    <h3>Subtotal: {{ subtotal() | currency }}</h3>
-    <button (click)="clearCart()">Limpiar Carrito</button>
+    <div class="container">
+      <h5 class="card-title">Productos Agregados</h5>
+      <table class="table table-striped">
+        <thead>
+          <tr class="text-center">
+            <th scope="col">Producto</th>
+            <th scope="col">Código</th>
+            <th scope="col">Cantidad</th>
+            <th scope="col">Precio Unitario</th>
+            <th scope="col">Subtotal</th>
+            <th scope="col">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for(product of scannedProducts(); track product.id){
+          <tr [@fadeOutAnimation] class="text-center">
+            <td>{{ product.name }}</td>
+            <td>{{ product.barcode }}</td>
+            <td [@quantityAnimation]="product.quantity">
+              {{ product.quantity }}
+            </td>
+            <td>{{ product.price_by_unit | currency }}</td>
+            <td>{{ product.price_by_unit! * product.quantity | currency }}</td>
+            <td class="text-center">
+              <i
+                [class]="
+                  product.quantity > 1 ? 'bi bi-dash-circle' : 'bi bi-trash'
+                "
+                [title]="product.quantity > 1 ? 'Restar' : 'Eliminar'"
+                (click)="removeProduct(product.id)"
+                style="cursor: pointer; color: red"
+              ></i>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+      <app-modal-spinner></app-modal-spinner>
+      <div class="row">
+        <div class="col text-end">
+          <h3>Total: {{ subtotal() | currency }}</h3>
+        </div>
+      </div>
+      @if(scannedProducts().length > 0){
+      <div class="row">
+        <div class="col text-center">
+          <button class="btn btn-success btn-lg" (click)="finalizeSale()">
+            Finalizar Venta
+          </button>
+        </div>
+      </div>
+      }
+    </div>
   </div>
 </div>

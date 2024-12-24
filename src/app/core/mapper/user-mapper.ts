@@ -1,11 +1,12 @@
-import { User } from '../user/model/user-model';
+import { User } from '../models/user-model';
 
 export function mapToUser(id: string, data: any): User {
   return {
     uid: id,
     authUserId: data.external_id,
     email: data.email,
-    displayName: data.user_name,
+    userName: data.user_name,
     roles: data.rol,
+    status: data.status,
   };
 }

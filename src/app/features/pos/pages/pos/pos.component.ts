@@ -6,6 +6,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { Router } from '@angular/router';
 import { trigger, style, animate, transition } from '@angular/animations';
 import { ModalSpinnerComponent } from './components/modal-spinner/modal-spinner.component';
+import { Sale } from '../../../../core/models/sale-model';
 
 @Component({
   selector: 'app-pos',
@@ -36,6 +37,7 @@ export class PosComponent {
   scannedProducts = signal<Product[]>([]); // Lista de productos escaneados
   subtotal = signal<number>(0); // Subtotal calculado
   private productService = inject(ProductService); // Inyecta el servicio
+  newSale = signal<Sale>(new Sale()); // Venta actual
 
   constructor() {
     // Recalcular el subtotal automáticamente cuando cambie la lista de productos
@@ -45,6 +47,21 @@ export class PosComponent {
         0
       );
       this.subtotal.set(total);
+    });
+  }
+  ngOnInit(): void {
+    document.getElementById('barcode-input')?.focus();
+  }
+  //TODO: Hacer que la venta se genere despues de que presionen el boton de finalizar venta.
+  private updateCurrentSale(): void {
+    this.newSale.update((sale: Sale) => {
+      sale.productsList = this.scannedProducts();
+      sale.subtotal = this.scannedProducts().reduce(
+        (sum, product) => sum + product.price_by_unit! * product.quantity,
+        0
+      );
+      sale.dateModified = new Date();
+      return sale;
     });
   }
 
@@ -62,6 +79,7 @@ export class PosComponent {
           product.barcode === barcode ? existingProduct : product
         )
       );
+      this.updateCurrentSale(); // Actualiza la venta
       this.hideModal(); // Oculta el modal
     } else {
       // Busca el producto en la base de datos
@@ -73,6 +91,7 @@ export class PosComponent {
         };
         this.scannedProducts.update((products) => [...products, newProduct]);
       }
+      this.updateCurrentSale(); // Actualiza la venta
       this.hideModal(); // Oculta el modal
     }
   }
@@ -116,5 +135,9 @@ export class PosComponent {
       modalElement.style.display = 'none'; // Oculta el modal
       document.body.classList.remove('modal-open'); // Restaura el scroll
     }
+  }
+
+  finalizeSale(): void {
+    console.log(this.newSale());
   }
 }

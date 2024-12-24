@@ -1,12 +1,13 @@
 import { Product } from './product-model';
+import { User } from './user-model';
 
-export interface Sale {
+export class Sale {
   customerId: string;
   customerName: string;
   dateCreated: Date;
   dateModified: Date;
   productsList: Product[];
-  userSeller: string;
+  userSeller: User;
   status: string;
   cashInstallment: number;
   mpInstallment: number;
@@ -15,4 +16,21 @@ export interface Sale {
   total: number;
   balanceBeforeSale: number;
   balanceAfterSale: number;
+
+  constructor() {
+    this.customerId = '';
+    this.customerName = '';
+    this.dateCreated = new Date();
+    this.dateModified = new Date();
+    this.productsList = [];
+    this.userSeller = new User();
+    this.status = 'pending';
+    this.cashInstallment = 0;
+    this.mpInstallment = 0;
+    this.subtotal = 0;
+    this.discount = 0;
+    this.total = 0;
+    this.balanceBeforeSale = 0;
+    this.balanceAfterSale = 0;
+  }
 }

@@ -15,7 +15,7 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { mapToUser } from '../mapper/user-mapper';
-import { User } from './model/user-model';
+import { User } from '../models/user-model';
 
 @Injectable({
   providedIn: 'root',
