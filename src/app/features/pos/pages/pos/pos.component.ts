@@ -7,10 +7,11 @@ import { Router } from '@angular/router';
 import { trigger, style, animate, transition } from '@angular/animations';
 import { ModalSpinnerComponent } from './components/modal-spinner/modal-spinner.component';
 import { Sale } from '../../../../core/models/sale-model';
+import { SaleSummaryModalComponent } from './components/sale-summary-modal/sale-summary-modal.component';
 
 @Component({
   selector: 'app-pos',
-  imports: [CurrencyPipe, ModalSpinnerComponent],
+  imports: [CurrencyPipe, ModalSpinnerComponent, SaleSummaryModalComponent],
   templateUrl: './pos.component.html',
   styleUrl: './pos.component.css',
   animations: [
@@ -38,6 +39,10 @@ export class PosComponent {
   subtotal = signal<number>(0); // Subtotal calculado
   private productService = inject(ProductService); // Inyecta el servicio
   newSale = signal<Sale>(new Sale()); // Venta actual
+  currentSaleSummary = signal<{ products: any[]; total: number }>({
+    products: [],
+    total: 0,
+  }); // Resumen de la venta
 
   constructor() {
     // Recalcular el subtotal automáticamente cuando cambie la lista de productos
@@ -53,16 +58,11 @@ export class PosComponent {
     document.getElementById('barcode-input')?.focus();
   }
   //TODO: Hacer que la venta se genere despues de que presionen el boton de finalizar venta.
-  private updateCurrentSale(): void {
-    this.newSale.update((sale: Sale) => {
-      sale.productsList = this.scannedProducts();
-      sale.subtotal = this.scannedProducts().reduce(
-        (sum, product) => sum + product.price_by_unit! * product.quantity,
-        0
-      );
-      sale.dateModified = new Date();
-      return sale;
-    });
+  updateSaleSummary(): void {
+    this.currentSaleSummary.set({
+      products: this.scannedProducts(),
+      total: this.subtotal(),
+    }); // Actualiza el resumen de la venta.
   }
 
   async scanProduct(barcode: string): Promise<void> {
@@ -79,7 +79,6 @@ export class PosComponent {
           product.barcode === barcode ? existingProduct : product
         )
       );
-      this.updateCurrentSale(); // Actualiza la venta
       this.hideModal(); // Oculta el modal
     } else {
       // Busca el producto en la base de datos
@@ -91,7 +90,6 @@ export class PosComponent {
         };
         this.scannedProducts.update((products) => [...products, newProduct]);
       }
-      this.updateCurrentSale(); // Actualiza la venta
       this.hideModal(); // Oculta el modal
     }
   }
@@ -138,6 +136,6 @@ export class PosComponent {
   }
 
   finalizeSale(): void {
-    console.log(this.newSale());
+    this.updateSaleSummary(); // Actualiza la venta actual
   }
 }

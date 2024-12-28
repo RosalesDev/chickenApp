@@ -56,10 +56,19 @@
           <h3>Total: {{ subtotal() | currency }}</h3>
         </div>
       </div>
+      <app-sale-summary-modal
+        [saleSummary]="currentSaleSummary()"
+      ></app-sale-summary-modal>
       @if(scannedProducts().length > 0){
       <div class="row">
         <div class="col text-center">
-          <button class="btn btn-success btn-lg" (click)="finalizeSale()">
+          <button
+            class="btn btn-primary"
+            type="button"
+            data-bs-toggle="modal"
+            data-bs-target="#saleSummaryModal"
+            (click)="updateSaleSummary()"
+          >
             Finalizar Venta
           </button>
         </div>
