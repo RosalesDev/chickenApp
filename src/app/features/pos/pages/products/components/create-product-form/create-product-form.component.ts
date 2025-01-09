@@ -20,9 +20,13 @@ export class CreateProductFormComponent {
   }
 
   @Input() showProductForm: boolean = false;
+  private codeType = signal<string>('barcode');
+
   form = signal<FormGroup>(
     new FormGroup({
+      codeType: new FormControl(['barcode', Validators.required]),
       barcode: new FormControl('', [Validators.required]),
+      plu: new FormControl('', [Validators.required]),
       initials: new FormControl('', [Validators.required]),
       is_weighed: new FormControl(false, [Validators.required]),
       name: new FormControl('', [Validators.required]),
@@ -46,5 +50,10 @@ export class CreateProductFormComponent {
 
   closeProductForm(): void {
     this.showProductForm = false;
+  }
+
+  onCodeTypeChange(value: string) {
+    this.codeType.set(value);
+    // this.updateValidators();
   }
 }

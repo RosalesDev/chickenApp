@@ -8,6 +8,19 @@
       novalidate
     >
       <div class="form-floating mb-3">
+        <select
+          id="codeType"
+          class="form-select"
+          formControlName="codeType"
+          (change)="onCodeTypeChange(form()['controls']['codeType'].value)"
+        >
+          <option value="barcode">Código de Barras</option>
+          <option value="plu">Código PLU</option>
+        </select>
+        <label for="codeType">Tipo de Código</label>
+      </div>
+      @if(form()['controls']['codeType'].value === 'barcode') {
+      <div class="form-floating mb-3">
         <input
           type="text"
           id="barcode"
@@ -21,7 +34,27 @@
         }
         <label for="barcode">Escanéa el Código de barras</label>
       </div>
-      @if (form()['controls']['barcode'].value) {
+      }
+      <!-- Campo Código PLU -->
+      @if(form()['controls']['codeType'].value === 'plu') {
+      <div class="form-floating mb-3">
+        <input
+          type="number"
+          id="plu"
+          autocomplete="off"
+          placeholder="Ingresa el Código PLU"
+          class="form-control"
+          formControlName="plu"
+          max="99999"
+        />
+        <label for="plu">Código PLU</label>
+        @if (form().get('plu')?.hasError('required') &&
+        form().get('plu')?.touched) {
+        <div class="text-danger mt-1">El código PLU es obligatorio.</div>
+        }
+      </div>
+      } @if (form()['controls']['barcode'].value ||
+      form()['controls']['plu'].value) {
       <div class="container">
         <div class="form-floating mb-3">
           <input

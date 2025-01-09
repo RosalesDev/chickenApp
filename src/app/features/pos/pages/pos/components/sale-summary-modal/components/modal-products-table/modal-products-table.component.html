@@ -1,0 +1,22 @@
+<table class="table table-striped">
+  <thead>
+    <tr class="text-center">
+      <th scope="col">Producto</th>
+      <th scope="col">Cantidad</th>
+      <th scope="col">$/unidad</th>
+      <th scope="col">$/Kg</th>
+      <th scope="col">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    @for(product of products; track product.id){
+    <tr class="text-center">
+      <td>{{ product.name }}</td>
+      <td>{{ product.quantity }}</td>
+      <td>${{ product.price_by_unit }}</td>
+      <td>${{ product.price_by_kg }}</td>
+      <td>{{ product.price_by_unit! * product.quantity | currency }}</td>
+    </tr>
+    }
+  </tbody>
+</table>

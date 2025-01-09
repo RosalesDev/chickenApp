@@ -20,17 +20,18 @@
       </div>
       <div class="modal-body">
         <!-- Resumen de la Venta -->
-        <div class="mb-3">
-          <h6>Productos:</h6>
-          <ul>
-            @for (product of saleSummary.products; track product.id) {
-            <li>
-              {{ product.name }} - {{ product.quantity }} x
-              {{ product.price | currency }}
-            </li>
-            }
-          </ul>
-          <h6>Total: {{ saleSummary.total | currency }}</h6>
+        <div class="container mb-3">
+          <app-modal-products-table
+            [products]="saleSummary.products"
+          ></app-modal-products-table>
+
+          <div class="row justify-content-end">
+            <div class="col-auto">
+              <span class="badge bg-secondary fs-5">
+                Subtotal: {{ saleSummary.total | currency }}
+              </span>
+            </div>
+          </div>
         </div>
 
         <!-- Aplicar Descuento -->
@@ -39,8 +40,11 @@
           <input
             type="number"
             id="discount"
+            placeholder="Ingesa el porcentaje de descuento"
             [(ngModel)]="discount"
             class="form-control"
+            (focus)="clearDiscountInput($event)"
+            (blur)="restoreDefaultIfEmpty($event)"
             (input)="updateTotal()"
           />
         </div>
@@ -60,9 +64,12 @@
                 <option value="other">Otro</option>
               </select>
               <input
+                id="payment-{{ i }}"
                 type="number"
                 class="form-control"
                 [(ngModel)]="payment.amount"
+                (focus)="clearPaymentInput($event)"
+                (blur)="restoreDefaultIfEmpty($event, i)"
                 (input)="updateTotal()"
                 placeholder="Monto"
               />
