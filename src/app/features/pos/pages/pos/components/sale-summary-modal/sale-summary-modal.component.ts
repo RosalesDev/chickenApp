@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import {
+  Component,
+  computed,
+  input,
+  Input,
+  Signal,
+  signal,
+  WritableSignal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ModalProductsTableComponent } from './components/modal-products-table/modal-products-table.component';
 
@@ -10,35 +18,51 @@ import { ModalProductsTableComponent } from './components/modal-products-table/m
   styleUrl: './sale-summary-modal.component.css',
 })
 export class SaleSummaryModalComponent {
-  @Input() saleSummary: { products: any[]; total: number } = {
+  // @Input() saleSummary: { products: any[]; total: number } = {
+  //   products: [],
+  //   total: 0,
+  // };
+
+  saleSummary = input<{ products: any[]; total: number }>({
     products: [],
     total: 0,
-  };
-  discount: number = 0;
-  payments: { type: string; amount: number }[] = [{ type: 'cash', amount: 0 }];
-  remainingTotal: number = 0;
+  });
+
+  discount = signal(0);
+  payments: { type: string; amount: WritableSignal<number> }[] = [
+    { type: 'cash', amount: signal(0) },
+  ];
+  paymentSum = signal(this.payments.reduce((sum, p) => sum + p.amount(), 0));
+  totalToPay: Signal<number> = computed(() => {
+    console.log('total dentro del computed: ', this.saleSummary().total);
+    const discountPercentage =
+      (this.saleSummary().total * this.discount()) / 100;
+    const totalWithDiscount = this.saleSummary().total - discountPercentage;
+    return totalWithDiscount - this.paymentSum();
+  });
   defaultAmountInputValue = 0;
   isDiscountInputFirstFocus = true;
   isPaymentInputFirstFocus = true;
 
-  ngOnInit() {
-    this.updateTotal();
+  resetTotalToPay() {
+    this.discount.set(0);
+    this.payments = [];
+    this.paymentSum.set(0);
   }
 
-  updateTotal() {
-    const discountAmount = (this.saleSummary.total * this.discount) / 100;
-    const totalWithDiscount = this.saleSummary.total - discountAmount;
-    const paymentSum = this.payments.reduce((sum, p) => sum + p.amount, 0);
-    this.remainingTotal = totalWithDiscount - paymentSum;
+  setPaymentAmount(event: Event, index: number) {
+    const input = event.target as HTMLInputElement;
+    this.payments[index].amount.set(Number(input.value));
+    this.paymentSum.set(this.payments.reduce((sum, p) => sum + p.amount(), 0));
   }
 
   addPayment() {
-    this.payments.push({ type: 'cash', amount: 0 });
+    this.payments.push({ type: 'cash', amount: signal(0) });
   }
 
   removePayment(index: number) {
     this.payments.splice(index, 1);
-    this.updateTotal();
+    this.paymentSum.set(this.payments.reduce((sum, p) => sum + p.amount(), 0));
   }
 
   finalizeSale() {
@@ -54,7 +78,7 @@ export class SaleSummaryModalComponent {
       const input = event.target as HTMLInputElement;
       input.value = ''; // Limpia el valor actual
       this.isDiscountInputFirstFocus = false;
-      this.discount = 0;
+      this.discount.set(0);
     }
   }
   clearPaymentInput(event: FocusEvent): void {
@@ -71,10 +95,10 @@ export class SaleSummaryModalComponent {
       input.value = String(this.defaultAmountInputValue);
       if (input.id === 'discount-input') {
         this.isDiscountInputFirstFocus = true;
-        this.discount = 0;
+        this.discount.set(0);
       }
       if (input.id.includes('payment-')) {
-        this.payments[index!].amount = this.defaultAmountInputValue;
+        this.payments[index!].amount.set(this.defaultAmountInputValue);
         this.isPaymentInputFirstFocus = true;
       }
     }

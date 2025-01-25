@@ -1,4 +1,10 @@
-import { Component, effect, inject, signal } from '@angular/core';
+import {
+  Component,
+  effect,
+  inject,
+  signal,
+  WritableSignal,
+} from '@angular/core';
 import { ProductService } from '../../services/product.service';
 import { CurrencyPipe } from '@angular/common';
 import { Product } from '../../../../core/models/product-model';
@@ -39,7 +45,10 @@ export class PosComponent {
   subtotal = signal<number>(0); // Subtotal calculado
   private productService = inject(ProductService); // Inyecta el servicio
   newSale = signal<Sale>(new Sale()); // Venta actual
-  currentSaleSummary = signal<{ products: any[]; total: number }>({
+  currentSaleSummary = signal<{
+    products: any[];
+    total: number;
+  }>({
     products: [],
     total: 0,
   }); // Resumen de la venta
@@ -59,6 +68,8 @@ export class PosComponent {
   }
   //TODO: Hacer que la venta se genere despues de que presionen el boton de finalizar venta.
   updateSaleSummary(): void {
+    console.log('Toral enviado desde pos:', this.subtotal());
+
     this.currentSaleSummary.set({
       products: this.scannedProducts(),
       total: this.subtotal(),

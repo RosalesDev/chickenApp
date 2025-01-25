@@ -1,6 +1,7 @@
 <div
   class="modal fade"
   id="saleSummaryModal"
+  data-bs-backdrop="static"
   tabindex="-1"
   aria-labelledby="saleSummaryModalLabel"
   aria-hidden="true"
@@ -22,13 +23,13 @@
         <!-- Resumen de la Venta -->
         <div class="container mb-3">
           <app-modal-products-table
-            [products]="saleSummary.products"
+            [products]="saleSummary().products"
           ></app-modal-products-table>
 
           <div class="row justify-content-end">
             <div class="col-auto">
               <span class="badge bg-secondary fs-5">
-                Subtotal: {{ saleSummary.total | currency }}
+                Subtotal: {{ saleSummary().total | currency }}
               </span>
             </div>
           </div>
@@ -45,7 +46,6 @@
             class="form-control"
             (focus)="clearDiscountInput($event)"
             (blur)="restoreDefaultIfEmpty($event)"
-            (input)="updateTotal()"
           />
         </div>
 
@@ -70,7 +70,7 @@
                 [(ngModel)]="payment.amount"
                 (focus)="clearPaymentInput($event)"
                 (blur)="restoreDefaultIfEmpty($event, i)"
-                (input)="updateTotal()"
+                (input)="setPaymentAmount($event, i)"
                 placeholder="Monto"
               />
               <button
@@ -89,17 +89,23 @@
 
         <!-- Total Restante -->
         <div class="mb-3">
-          <h6>Total a Pagar: {{ remainingTotal | currency }}</h6>
+          <h6>Total a Pagar: {{ totalToPay() | currency }}</h6>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          data-bs-dismiss="modal"
+          (click)="resetTotalToPay()"
+        >
           Cancelar
         </button>
         <button
           type="button"
           class="btn btn-success"
-          [disabled]="remainingTotal > 0"
+          data-bs-dismiss="modal"
+          [disabled]="totalToPay() > 0"
           (click)="finalizeSale()"
         >
           Finalizar Venta
