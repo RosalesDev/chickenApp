@@ -8,6 +8,7 @@
         class="form-control"
         #barcodeInput
         (keyup.enter)="scanProduct(barcodeInput.value); barcodeInput.value = ''"
+        (input)="searchProductByName(barcodeInput.value)"
         placeholder="Escanea o ingresa un código"
       />
       <label for="barcode-input">Escanea o ingresa un código</label>

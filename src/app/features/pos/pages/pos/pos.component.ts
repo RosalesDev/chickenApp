@@ -76,6 +76,12 @@ export class PosComponent {
     }); // Actualiza el resumen de la venta.
   }
 
+  async searchProductByName(query: string): Promise<void> {
+    if (query.length < 3) return;
+    const products = await this.productService.searchProductsByName(query);
+    console.log(products);
+  }
+
   async scanProduct(barcode: string): Promise<void> {
     this.showModal(); // Muestra el modal
     const existingProduct = this.scannedProducts().find(
