@@ -61,9 +61,7 @@ export class ProductsComponent {
 
     try {
       this.isSearching = true; // Indicar que se está buscando
-      const searchResults = await this.productService.searchProductsByName(
-        query
-      );
+      const searchResults = await this.productService.getProductsByName(query);
       this.products = searchResults; // Mostrar solo los productos que coincidan
       this.isSearching = false;
     } catch (error) {
@@ -72,7 +70,7 @@ export class ProductsComponent {
     }
   }
   editProduct(product: Product) {
-    this.productService.updateProduct(product.id, product);
+    this.productService.updateProduct(product.id!, product);
   }
 
   deleteProduct(id: string): void {

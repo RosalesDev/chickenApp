@@ -3,23 +3,17 @@
   <div class="card-body">
     <form
       class="needs-validation"
-      [formGroup]="form()"
+      [formGroup]="form"
       (ngSubmit)="createProduct()"
-      novalidate
     >
       <div class="form-floating mb-3">
-        <select
-          id="codeType"
-          class="form-select"
-          formControlName="codeType"
-          (change)="onCodeTypeChange(form()['controls']['codeType'].value)"
-        >
+        <select id="codeType" class="form-select" formControlName="codeType">
           <option value="barcode">Código de Barras</option>
-          <option value="plu">Código PLU</option>
+          <option value="pluCode">Código PLU</option>
         </select>
         <label for="codeType">Tipo de Código</label>
       </div>
-      @if(form()['controls']['codeType'].value === 'barcode') {
+      @if(form.get('codeType')?.value === 'barcode') {
       <div class="form-floating mb-3">
         <input
           type="text"
@@ -29,32 +23,40 @@
           class="form-control"
           formControlName="barcode"
         />
-        @if (form().get('barcode')!.hasError('required')) {
-        <div>Name is required.</div>
+        @if (form.get('barcode')!.hasError('required')) {
+        <span class="alert-danger">Se requiere el código de barras.</span>
         }
         <label for="barcode">Escanéa el Código de barras</label>
       </div>
       }
       <!-- Campo Código PLU -->
-      @if(form()['controls']['codeType'].value === 'plu') {
+      @if(form.get('codeType')?.value === 'pluCode') {
       <div class="form-floating mb-3">
         <input
-          type="number"
-          id="plu"
+          type="text"
+          id="plu_code"
           autocomplete="off"
           placeholder="Ingresa el Código PLU"
           class="form-control"
-          formControlName="plu"
-          max="99999"
+          formControlName="pluCode"
         />
-        <label for="plu">Código PLU</label>
-        @if (form().get('plu')?.hasError('required') &&
-        form().get('plu')?.touched) {
+        <label for="plu_code">Código PLU</label>
+        <!-- @if (form.get('pluCode')?.invalid && (form.get('pluCode')?.dirty ||
+        form.get('pluCode')?.touched)) { @if
+        (form.get('pluCode')?.hasError('pattern')) {
+        <div class="text-danger mt-1">El código PLU debe tener 5 dígitos.</div>
+        } @if(form.get('pluCode')?.hasError('required')) {
         <div class="text-danger mt-1">El código PLU es obligatorio.</div>
+        } } -->
+        @if (form.get('pluCode')?.hasError('pattern') &&
+        form.get('pluCode')?.touched) {
+        <div class="text-danger mt-1">
+          El código PLU es debe tener 5 dígitos.
+        </div>
         }
       </div>
-      } @if (form()['controls']['barcode'].value ||
-      form()['controls']['plu'].value) {
+      } @if (form.get('pluCode')?.hasError('pattern')) {
+
       <div class="container">
         <div class="form-floating mb-3">
           <input
@@ -98,7 +100,9 @@
         </div>
       </div>
       }
-      <button type="submit" class="btn btn-primary">Crear</button>
+      <button type="submit" class="btn btn-primary" [disabled]="form.invalid">
+        Crear
+      </button>
     </form>
   </div>
 </div>

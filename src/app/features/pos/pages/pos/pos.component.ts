@@ -42,6 +42,7 @@ import { SaleSummaryModalComponent } from './components/sale-summary-modal/sale-
 })
 export class PosComponent {
   scannedProducts = signal<Product[]>([]); // Lista de productos escaneados
+  productsFoundByName = signal<Product[]>([]); // Resultado de la busqueda por nombre
   subtotal = signal<number>(0); // Subtotal calculado
   private productService = inject(ProductService); // Inyecta el servicio
   newSale = signal<Sale>(new Sale()); // Venta actual
@@ -76,32 +77,68 @@ export class PosComponent {
     }); // Actualiza el resumen de la venta.
   }
 
-  async scanProduct(barcode: string): Promise<void> {
-    this.showModal(); // Muestra el modal
-    const existingProduct = this.scannedProducts().find(
-      (product) => product.barcode === barcode
-    );
+  async searchProduct(inputValue: string): Promise<void> {
+    this.showLoadingModal();
+    let inputType = /^\d+$/.test(inputValue) ? 'BARCODE' : 'PRODUCT_NAME';
+    console.log('Tipo de busqueda:', inputType);
 
-    if (existingProduct) {
-      // Incrementa la cantidad si el producto ya existe en la lista
-      existingProduct.quantity++;
-      this.scannedProducts.update((products) =>
-        products.map((product) =>
-          product.barcode === barcode ? existingProduct : product
-        )
-      );
-      this.hideModal(); // Oculta el modal
-    } else {
-      // Busca el producto en la base de datos
-      const product = await this.productService.getProductByBarcode(barcode);
-      if (product().length > 0) {
-        const newProduct = {
-          ...product()[0], // Información del producto
-          quantity: 1, // Inicializa la cantidad en 1
-        };
-        this.scannedProducts.update((products) => [...products, newProduct]);
+    if (inputType === 'PRODUCT_NAME') {
+      const products = await this.productService.getProductsByName(inputValue);
+      if (products.length === 0) {
+        this.hideModal();
+        console.log('No se encontraron productos');
+        return;
       }
-      this.hideModal(); // Oculta el modal
+      this.productsFoundByName.set(products);
+      console.log(this.productsFoundByName());
+      this.hideModal();
+    } else {
+      const existingProduct = this.scannedProducts().find(
+        (product) => product.barcode === inputValue
+      );
+
+      if (existingProduct) {
+        // Incrementa la cantidad si el producto ya existe en la lista
+        existingProduct.quantity++;
+        this.scannedProducts.update((products) =>
+          products.map((product) =>
+            product.barcode === inputValue ? existingProduct : product
+          )
+        );
+        this.hideModal(); // Oculta el modal
+      } else {
+        // Busca el producto por barcode en la base de datos
+        const product = await this.productService.getProductByBarcode(
+          inputValue
+        );
+        // TODO:CONTINUAR AQUI. QUE HACER SI NO SE ENCUENTRA EL PRODUCTO
+        if (product().length === 0) {
+          const pluCode: number = Number(inputValue.slice(0, 5));
+          const productByPlu = await this.productService.getProductsByPluCode(
+            pluCode
+          );
+          if (productByPlu.length > 0) {
+            const newProduct = {
+              ...product()[0], // Información del producto
+              quantity: 1, // Inicializa la cantidad en 1
+            };
+            this.scannedProducts.update((products) => [
+              ...products,
+              newProduct,
+            ]);
+          } else {
+            console.log('No se encontró el producto');
+          }
+        } else {
+          const newProduct = {
+            ...product()[0], // Información del producto
+            quantity: 1, // Inicializa la cantidad en 1
+          };
+          this.scannedProducts.update((products) => [...products, newProduct]);
+        }
+
+        this.hideModal(); // Oculta el modal
+      }
     }
   }
 
@@ -128,7 +165,7 @@ export class PosComponent {
     );
   }
 
-  private showModal(): void {
+  private showLoadingModal(): void {
     const modalElement = document.getElementById('loadingModal');
     if (modalElement) {
       modalElement.classList.add('show'); // Agrega la clase 'show'

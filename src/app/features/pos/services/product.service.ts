@@ -44,7 +44,7 @@ export class ProductService {
   // Crear producto
   async createProduct(product: Product): Promise<void> {
     const productRef = doc(this.productsCollection);
-    await setDoc(productRef, { ...product, id: productRef.id });
+    await setDoc(productRef, { ...product });
   }
   // Leer productos (paginados)
   async getProducts(pageSize: number, lastVisible?: any): Promise<Product[]> {
@@ -73,12 +73,18 @@ export class ProductService {
   }
 
   // Buscar productos por nombre
-  async searchProductsByName(name: string): Promise<Product[]> {
+  async getProductsByName(name: string): Promise<Product[]> {
     const q = query(
       this.productsCollection,
       where('name', '>=', name),
       where('name', '<=', name + '\uf8ff') // Búsqueda que soporte prefijos
     );
+    const querySnapshot = await getDocs(q);
+    return this.mapSnapshotToProducts(querySnapshot);
+  }
+  // Buscar productos por PLU
+  async getProductsByPluCode(pluCode: number): Promise<Product[]> {
+    const q = query(this.productsCollection, where('pluCode', '==', pluCode));
     const querySnapshot = await getDocs(q);
     return this.mapSnapshotToProducts(querySnapshot);
   }

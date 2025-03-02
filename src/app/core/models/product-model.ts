@@ -1,6 +1,7 @@
 export interface Product {
-  id: string;
+  id: string | null;
   barcode: string; // Código de barras del producto
+  pluCode: number;
   availability_in_deposit: number; // Disponibilidad en el depósito (stock)
   initials: string; // Iniciales del producto o código corto
   is_weighed: boolean; // Indica si el producto es por peso
