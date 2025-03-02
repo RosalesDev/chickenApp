@@ -1,6 +1,8 @@
 import { Component, Directive, inject, Input, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import {
   AbstractControl,
+  FormBuilder,
   FormControl,
   FormGroup,
   NG_VALIDATORS,
@@ -15,7 +17,7 @@ import { ProductDto } from '../../../../../../core/dtos/ProductDto';
 
 @Component({
   selector: 'app-create-product-form',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, CommonModule],
   templateUrl: './create-product-form.component.html',
   styleUrl: './create-product-form.component.css',
 })
@@ -23,53 +25,64 @@ export class CreateProductFormComponent {
   @Input() showProductForm: boolean = false;
   productService = inject(ProductService);
   products: Product[] = [];
-  form!: FormGroup;
+  form: FormGroup;
 
-  ngOnInit(): void {
+  constructor() {
     this.form = new FormGroup({
       codeType: new FormControl('barcode', [Validators.required]),
-      barcode: new FormControl('', [Validators.required]),
-      pluCode: new FormControl(
-        '',
-        Validators.pattern(new RegExp('^[0-9]{4}$'))
-      ),
+      barcode: new FormControl('', [
+        Validators.required,
+        Validators.minLength(4),
+      ]),
+      pluCode: new FormControl('', [
+        Validators.required,
+        Validators.pattern(/^[0-9]{5}$/),
+      ]),
       // initials: new FormControl('', [Validators.required]),
       // is_weighed: new FormControl(false, [Validators.required]),
       name: new FormControl('', [Validators.required]),
-      availability_in_deposit: new FormControl('', [Validators.required]),
+      availability_in_deposit: new FormControl('', [
+        Validators.required,
+        Validators.pattern(/^[0-9]$/),
+      ]),
       price_by_unit: new FormControl('', [Validators.required]),
       price_by_kg: new FormControl('', [Validators.required]),
     });
-    document.getElementById('barcode')?.focus();
-    this.form.get('codeType')?.valueChanges.subscribe((value) => {
-      if (value?.toString() === 'pluCode') {
-        this.form.controls['pluCode'].setValidators([Validators.required]);
-        this.form.controls['barcode'].clearValidators();
-      } else {
-        this.form.controls['barcode'].setValidators([Validators.required]);
-        this.form.controls['pluCode'].clearValidators();
-      }
-      this.form.controls['pluCode'].updateValueAndValidity();
-      this.form.controls['barcode'].updateValueAndValidity();
-      console.log('PLU valid?:', this.form.get('pluCode')?.valid);
-      console.log('BARCODE valid?:', this.form.get('barcode')?.valid);
-    });
   }
 
-  // codeType = signal<string>('barcode');
+  ngOnInit(): void {
+    console.log('Se ejecuta el ngOnInit');
 
-  // get pluCode() {
-  //   console.log('Llamando a pluCode');
-  //   return this.form.get('pluCode');
-  // }
-  // get barcode() {
-  //   console.log('Llamando a barcode');
-  //   return this.form.get('barcode');
-  // }
+    this.form.get('pluCode')?.valueChanges.subscribe((value: string) => {
+      const regex = /^\d+$/;
+      if (!regex.test(value) && value.length > 0) {
+        this.form.get('pluCode')?.setValue(value.slice(0, value.length - 1));
+      }
+      if (value.length > 5) {
+        this.form.get('pluCode')?.setValue(value.slice(0, 5));
+      }
+    });
 
-  // get codeTypeValue() {
-  //   return this.form.get('codeType')?.value;
-  // }
+    this.form.get('codeType')?.valueChanges.subscribe((value) => {
+      this.form.get('name')?.reset();
+      this.form.get('availability_in_deposit')?.reset();
+      this.form.get('price_by_unit')?.reset();
+      this.form.get('price_by_kg')?.reset();
+      if (value === 'pluCode') {
+        this.form.get('barcode')?.reset();
+        this.form.get('barcode')?.disable();
+        if (this.form.get('pluCode')?.disabled) {
+          this.form.get('pluCode')?.enable();
+        }
+      } else {
+        this.form.get('pluCode')?.reset();
+        this.form.get('pluCode')?.disable();
+        if (this.form.get('barcode')?.disabled) {
+          this.form.get('barcode')?.enable();
+        }
+      }
+    });
+  }
 
   logInvalidFields() {
     Object.keys(this.form.controls).forEach((key) => {
@@ -97,9 +110,7 @@ export class CreateProductFormComponent {
   closeProductForm(): void {
     this.showProductForm = false;
   }
-
-  // onCodeTypeChange(value: string) {
-  //   this.codeType.set(value);
-  //   // this.updateValidators();
-  // }
+}
+function checkCodeTypeValue(value: any, string: any) {
+  throw new Error('Function not implemented.');
 }

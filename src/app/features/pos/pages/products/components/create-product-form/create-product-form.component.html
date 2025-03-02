@@ -16,6 +16,7 @@
       @if(form.get('codeType')?.value === 'barcode') {
       <div class="form-floating mb-3">
         <input
+          autofocus
           type="text"
           id="barcode"
           autocomplete="off"
@@ -33,21 +34,15 @@
       @if(form.get('codeType')?.value === 'pluCode') {
       <div class="form-floating mb-3">
         <input
-          type="text"
           id="plu_code"
+          type="text"
+          autofocus
           autocomplete="off"
           placeholder="Ingresa el Código PLU"
           class="form-control"
           formControlName="pluCode"
         />
         <label for="plu_code">Código PLU</label>
-        <!-- @if (form.get('pluCode')?.invalid && (form.get('pluCode')?.dirty ||
-        form.get('pluCode')?.touched)) { @if
-        (form.get('pluCode')?.hasError('pattern')) {
-        <div class="text-danger mt-1">El código PLU debe tener 5 dígitos.</div>
-        } @if(form.get('pluCode')?.hasError('required')) {
-        <div class="text-danger mt-1">El código PLU es obligatorio.</div>
-        } } -->
         @if (form.get('pluCode')?.hasError('pattern') &&
         form.get('pluCode')?.touched) {
         <div class="text-danger mt-1">
@@ -55,7 +50,8 @@
         </div>
         }
       </div>
-      } @if (form.get('pluCode')?.hasError('pattern')) {
+      } @if (form.get('pluCode')?.valid && form.get('pluCode')?.value != '' ||
+      form.get('barcode')?.valid && form.get('barcode')?.value != '') {
 
       <div class="container">
         <div class="form-floating mb-3">
@@ -71,7 +67,7 @@
         </div>
         <div class="form-floating mb-3">
           <input
-            type="number"
+            type="text"
             id="availability_in_deposit"
             class="form-control"
             formControlName="availability_in_deposit"
@@ -100,9 +96,23 @@
         </div>
       </div>
       }
-      <button type="submit" class="btn btn-primary" [disabled]="form.invalid">
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="
+          form.invalid ||
+          (form.get('barcode')?.invalid && form.get('pluCode')?.invalid)
+        "
+      >
         Crear
       </button>
     </form>
+    <span>pluCodeValid: {{ form.get("pluCode")?.valid }}</span>
+    <br />
+    <span>barcodeValid: {{ form.get("barcode")?.valid }}</span>
+    <br />
+    <span>formValid: {{ form.valid }}</span>
+    <br />
+    <span>formErrors: {{ form.errors | json }}</span>
   </div>
 </div>
