@@ -26,6 +26,9 @@
         />
         @if (form.get('barcode')!.hasError('required')) {
         <span class="alert-danger">Se requiere el código de barras.</span>
+        } @if (form.get('barcode')?.value?.toString().length < 6 &&
+        form.get('barcode')!.dirty) {
+        <span class="alert-danger">Le faltan digitos al códico de barras</span>
         }
         <label for="barcode">Escanéa el Código de barras</label>
       </div>
@@ -63,6 +66,7 @@
             class="form-control"
             formControlName="name"
           />
+
           <label for="name">Nombre</label>
         </div>
         <div class="form-floating mb-3">
@@ -98,21 +102,19 @@
       }
       <button
         type="submit"
-        class="btn btn-primary"
+        class="btn btn-primary w-100"
         [disabled]="
           form.invalid ||
           (form.get('barcode')?.invalid && form.get('pluCode')?.invalid)
         "
       >
-        Crear
+        {{
+          form.invalid ||
+          (form.get("barcode")?.invalid && form.get("pluCode")?.invalid)
+            ? "Completa los campos"
+            : "Crear"
+        }}
       </button>
     </form>
-    <span>pluCodeValid: {{ form.get("pluCode")?.valid }}</span>
-    <br />
-    <span>barcodeValid: {{ form.get("barcode")?.valid }}</span>
-    <br />
-    <span>formValid: {{ form.valid }}</span>
-    <br />
-    <span>formErrors: {{ form.errors | json }}</span>
   </div>
 </div>

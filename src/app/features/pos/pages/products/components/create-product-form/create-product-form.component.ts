@@ -32,7 +32,8 @@ export class CreateProductFormComponent {
       codeType: new FormControl('barcode', [Validators.required]),
       barcode: new FormControl('', [
         Validators.required,
-        Validators.minLength(4),
+        Validators.minLength(6),
+        Validators.pattern(/^[0-9]/),
       ]),
       pluCode: new FormControl('', [
         Validators.required,
@@ -43,10 +44,16 @@ export class CreateProductFormComponent {
       name: new FormControl('', [Validators.required]),
       availability_in_deposit: new FormControl('', [
         Validators.required,
-        Validators.pattern(/^[0-9]$/),
+        Validators.pattern(/^(?:0|[1-9]\d*)(?:[.,]\d+)?$/),
       ]),
-      price_by_unit: new FormControl('', [Validators.required]),
-      price_by_kg: new FormControl('', [Validators.required]),
+      price_by_unit: new FormControl('', [
+        Validators.required,
+        Validators.pattern(/^(?:0|[1-9]\d*)(?:[.,]\d+)?$/),
+      ]),
+      price_by_kg: new FormControl('', [
+        Validators.required,
+        Validators.pattern(/^(?:0|[1-9]\d*)(?:[.,]\d+)?$/),
+      ]),
     });
   }
 
@@ -56,12 +63,53 @@ export class CreateProductFormComponent {
     this.form.get('pluCode')?.valueChanges.subscribe((value: string) => {
       const regex = /^\d+$/;
       if (!regex.test(value) && value.length > 0) {
-        this.form.get('pluCode')?.setValue(value.slice(0, value.length - 1));
+        this.form.get('pluCode')?.setValue(value.slice(0, value.length - 1)),
+          { emitEvent: false };
       }
       if (value.length > 5) {
-        this.form.get('pluCode')?.setValue(value.slice(0, 5));
+        this.form.get('pluCode')?.setValue(value.slice(0, 5)),
+          { emitEvent: false };
       }
     });
+    this.form.get('barcode')?.valueChanges.subscribe((value: string) => {
+      const regex = /^\d+$/;
+      if (!regex.test(value) && value.length > 0) {
+        this.form.get('barcode')?.setValue(value.slice(0, value.length - 1)),
+          { emitEvent: false };
+      }
+    });
+
+    this.form
+      .get('availability_in_deposit')
+      ?.valueChanges.subscribe((value: string) => {
+        const regex = /^(?:0|[1-9]\d*)(?:[.,]\d*)?$/;
+        if (!regex.test(value) && value.length > 0) {
+          this.form
+            .get('availability_in_deposit')
+            ?.setValue(value.slice(0, value.length - 1)),
+            { emitEvent: false };
+        }
+      });
+    this.form.get('price_by_unit')?.valueChanges.subscribe((value: string) => {
+      const regex = /^(?:0|[1-9]\d*)(?:[.,]\d*)?$/;
+      if (!regex.test(value) && value.length > 0) {
+        this.form
+          .get('price_by_unit')
+          ?.setValue(value.slice(0, value.length - 1)),
+          { emitEvent: false };
+      }
+    });
+    this.form.get('price_by_kg')?.valueChanges.subscribe((value: string) => {
+      const regex = /^(?:0|[1-9]\d*)(?:[.,]\d*)?$/;
+      if (!regex.test(value) && value.length > 0) {
+        this.form
+          .get('price_by_kg')
+          ?.setValue(value.slice(0, value.length - 1)),
+          { emitEvent: false };
+      }
+    });
+
+    this.form.get('pluCode')?.disable();
 
     this.form.get('codeType')?.valueChanges.subscribe((value) => {
       this.form.get('name')?.reset();
