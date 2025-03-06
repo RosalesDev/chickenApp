@@ -40,7 +40,7 @@ export class CreateProductFormComponent {
         Validators.pattern(/^[0-9]{5}$/),
       ]),
       // initials: new FormControl('', [Validators.required]),
-      // is_weighed: new FormControl(false, [Validators.required]),
+      is_weighed: new FormControl(false, [Validators.required]),
       name: new FormControl('', [Validators.required]),
       availability_in_deposit: new FormControl('', [
         Validators.required,
@@ -59,6 +59,16 @@ export class CreateProductFormComponent {
 
   ngOnInit(): void {
     console.log('Se ejecuta el ngOnInit');
+
+    this.form.get('price_by_kg')?.disable();
+    this.form.get('is_weighed')?.valueChanges.subscribe((value: boolean) => {
+      if (!value) {
+        this.form.get('price_by_kg')?.disable();
+        this.form.get('price_by_kg')?.reset();
+      } else {
+        this.form.get('price_by_kg')?.enable();
+      }
+    });
 
     this.form.get('pluCode')?.valueChanges.subscribe((value: string) => {
       const regex = /^\d+$/;

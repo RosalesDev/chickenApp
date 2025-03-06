@@ -66,37 +66,81 @@
             class="form-control"
             formControlName="name"
           />
-
           <label for="name">Nombre</label>
+          @if (form.get('name')!.hasError('required') &&
+          (form.get('name')?.touched || form.get('name')?.dirty)) {
+          <span class="alert-danger">El nombre es obligatorio.</span>}
         </div>
         <div class="form-floating mb-3">
           <input
             type="text"
+            autocomplete="off"
             id="availability_in_deposit"
             class="form-control"
             formControlName="availability_in_deposit"
           />
           <label for="availability_in_deposit" class="form-label">Stock</label>
+          @if (form.get('availability_in_deposit')!.hasError('required') &&
+          (form.get('availability_in_deposit')?.touched ||
+          form.get('availability_in_deposit')?.dirty)) {
+          <span class="alert-danger">El stock es obligatorio</span>}
         </div>
         <div class="form-floating mb-3">
-          <input
-            type="currency"
-            id="price_by_unit"
-            class="form-control"
-            formControlName="price_by_unit"
-          />
-          <label for="price_by_unit" class="form-label"
-            >Precio por Unidad</label
-          >
+          <div class="d-flex form-switch ps-0">
+            <label class="form-check-label" for="flexSwitchIsWighed"
+              >Producto pesable</label
+            >
+            <input
+              class="form-check-input ms-3"
+              type="checkbox"
+              role="switch"
+              id="flexSwitchIsWighed"
+              formControlName="is_weighed"
+            />
+          </div>
         </div>
+
         <div class="form-floating mb-3">
-          <input
-            type="currency"
-            id="price_by_kg"
-            class="form-control"
-            formControlName="price_by_kg"
-          />
-          <label for="price_by_kg" class="form-label">Precio por Kg</label>
+          <div class="row">
+            <div class="col-6">
+              <div class="form-floating mb-3">
+                <input
+                  type="currency"
+                  autocomplete="off"
+                  id="price_by_unit"
+                  class="form-control"
+                  formControlName="price_by_unit"
+                />
+                <label for="price_by_unit" class="form-label"
+                  >Precio por Unidad</label
+                >
+                @if (form.get('price_by_unit')!.hasError('required') &&
+                (form.get('price_by_unit')?.touched ||
+                form.get('price_by_unit')?.dirty)) {
+                <span class="alert-danger">Este dato es obligatorio.</span>}
+              </div>
+            </div>
+            @if(form.get('is_weighed')?.value) {
+            <div class="col-6">
+              <div class="form-floating mb-3">
+                <input
+                  type="currency"
+                  autocomplete="off"
+                  id="price_by_kg"
+                  class="form-control"
+                  formControlName="price_by_kg"
+                />
+                <label for="price_by_kg" class="form-label"
+                  >Precio por Kg</label
+                >
+                @if (form.get('price_by_kg')!.hasError('required') &&
+                (form.get('price_by_kg')?.touched ||
+                form.get('price_by_kg')?.dirty)) {
+                <span class="alert-danger">Este dato es obligatorio.</span>}
+              </div>
+            </div>
+            }
+          </div>
         </div>
       </div>
       }
