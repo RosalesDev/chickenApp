@@ -1,69 +1,71 @@
 <!-- Formulario para crear nuevos productos -->
 <div class="card mt-5 shadow w-50 m-auto">
+  <div class="card-header text-center">CREAR PRODUCTO</div>
   <div class="card-body">
     <form
       class="needs-validation"
       [formGroup]="form"
       (ngSubmit)="createProduct()"
     >
-      <div class="form-floating mb-3">
-        <select id="codeType" class="form-select" formControlName="codeType">
-          <option value="barcode">Código de Barras</option>
-          <option value="pluCode">Código PLU</option>
-        </select>
-        <label for="codeType">Tipo de Código</label>
-      </div>
-      @if(form.get('codeType')?.value === 'barcode') {
-      <div class="form-floating mb-3">
-        <input
-          autofocus
-          type="text"
-          id="barcode"
-          autocomplete="off"
-          placeholder="Escanéa el Código de barras"
-          class="form-control"
-          formControlName="barcode"
-        />
-        @if (form.get('barcode')!.hasError('required')) {
-        <span class="alert-danger">Se requiere el código de barras.</span>
-        } @if (form.get('barcode')?.value?.toString().length < 6 &&
-        form.get('barcode')!.dirty) {
-        <span class="alert-danger">Le faltan digitos al códico de barras</span>
-        }
-        <label for="barcode">Escanéa el Código de barras</label>
-      </div>
-      }
-      <!-- Campo Código PLU -->
-      @if(form.get('codeType')?.value === 'pluCode') {
-      <div class="form-floating mb-3">
-        <input
-          id="plu_code"
-          type="text"
-          autofocus
-          autocomplete="off"
-          placeholder="Ingresa el Código PLU"
-          class="form-control"
-          formControlName="pluCode"
-        />
-        <label for="plu_code">Código PLU</label>
-        @if (form.get('pluCode')?.hasError('pattern') &&
-        form.get('pluCode')?.touched) {
-        <div class="text-danger mt-1">
-          El código PLU es debe tener 5 dígitos.
+      <div class="container">
+        <div class="form-floating mb-3">
+          <select id="codeType" class="form-select" formControlName="codeType">
+            <option value="barcode">Código de Barras</option>
+            <option value="pluCode">Código PLU</option>
+          </select>
+          <label for="codeType">Tipo de Código</label>
+        </div>
+        @if(form.get('codeType')?.value === 'barcode') {
+        <div class="form-floating mb-3">
+          <input
+            autofocus
+            type="text"
+            id="barcode"
+            autocomplete="off"
+            placeholder="Escanéa el Código de barras"
+            class="form-control"
+            formControlName="barcode"
+          />
+          @if (form.get('barcode')!.hasError('required')) {
+          <span class="alert-danger">Se requiere el código de barras.</span>
+          } @if (form.get('barcode')?.value?.toString().length < 6 &&
+          form.get('barcode')!.dirty) {
+          <span class="alert-danger"
+            >Le faltan digitos al códico de barras</span
+          >
+          }
+          <label for="barcode">Escanéa el Código de barras</label>
         </div>
         }
-      </div>
-      } @if (form.get('pluCode')?.valid && form.get('pluCode')?.value != '' ||
-      form.get('barcode')?.valid && form.get('barcode')?.value != '') {
-
-      <div class="container">
+        <!-- Campo Código PLU -->
+        @if(form.get('codeType')?.value === 'pluCode') {
+        <div class="form-floating mb-3">
+          <input
+            id="plu_code"
+            type="text"
+            autofocus
+            autocomplete="off"
+            placeholder="Ingresa el Código PLU"
+            class="form-control"
+            formControlName="pluCode"
+          />
+          <label for="plu_code">Código PLU</label>
+          @if (form.get('pluCode')?.hasError('pattern') &&
+          form.get('pluCode')?.touched) {
+          <div class="text-danger mt-1">
+            El código PLU es debe tener 5 dígitos.
+          </div>
+          }
+        </div>
+        } @if (form.get('pluCode')?.valid && form.get('pluCode')?.value != '' ||
+        form.get('barcode')?.valid && form.get('barcode')?.value != '') {
         <div class="form-floating mb-3">
           <input
             type="text"
             id="name"
             autocomplete="off"
             placeholder="Nombre del producto"
-            class="form-control"
+            class="form-control text-uppercase"
             formControlName="name"
           />
           <label for="name">Nombre</label>
@@ -71,20 +73,44 @@
           (form.get('name')?.touched || form.get('name')?.dirty)) {
           <span class="alert-danger">El nombre es obligatorio.</span>}
         </div>
-        <div class="form-floating mb-3">
-          <input
-            type="text"
-            autocomplete="off"
-            id="availability_in_deposit"
-            class="form-control"
-            formControlName="availability_in_deposit"
-          />
-          <label for="availability_in_deposit" class="form-label">Stock</label>
-          @if (form.get('availability_in_deposit')!.hasError('required') &&
-          (form.get('availability_in_deposit')?.touched ||
-          form.get('availability_in_deposit')?.dirty)) {
-          <span class="alert-danger">El stock es obligatorio</span>}
+        <div class="row">
+          <div class="col-6">
+            <div class="form-floating mb-3">
+              <input
+                type="text"
+                id="initials"
+                autocomplete="off"
+                placeholder="Iniciales"
+                class="form-control"
+                formControlName="initials"
+              />
+              <label for="initials">Iniciales</label>
+              @if (form.get('initials')!.hasError('required') &&
+              (form.get('initials')?.touched || form.get('initials')?.dirty)) {
+              <span class="alert-danger">Campo obligatorio.</span>}
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="form-floating mb-3">
+              <input
+                type="text"
+                autocomplete="off"
+                id="availability_in_deposit"
+                class="form-control"
+                formControlName="availability_in_deposit"
+              />
+              <label for="availability_in_deposit" class="form-label"
+                >Stock</label
+              >
+              @if (form.get('availability_in_deposit')!.hasError('required') &&
+              (form.get('availability_in_deposit')?.touched ||
+              form.get('availability_in_deposit')?.dirty)) {
+              <span class="alert-danger">El stock es obligatorio</span>}
+            </div>
+          </div>
         </div>
+        <hr />
+
         <div class="form-floating mb-3">
           <div class="d-flex form-switch ps-0">
             <label class="form-check-label" for="flexSwitchIsWighed"
@@ -142,23 +168,23 @@
             }
           </div>
         </div>
+        }
+        <button
+          type="submit"
+          class="btn btn-primary w-100"
+          [disabled]="
+            form.invalid ||
+            (form.get('barcode')?.invalid && form.get('pluCode')?.invalid)
+          "
+        >
+          {{
+            form.invalid ||
+            (form.get("barcode")?.invalid && form.get("pluCode")?.invalid)
+              ? "Completa los campos"
+              : "Crear"
+          }}
+        </button>
       </div>
-      }
-      <button
-        type="submit"
-        class="btn btn-primary w-100"
-        [disabled]="
-          form.invalid ||
-          (form.get('barcode')?.invalid && form.get('pluCode')?.invalid)
-        "
-      >
-        {{
-          form.invalid ||
-          (form.get("barcode")?.invalid && form.get("pluCode")?.invalid)
-            ? "Completa los campos"
-            : "Crear"
-        }}
-      </button>
     </form>
   </div>
 </div>

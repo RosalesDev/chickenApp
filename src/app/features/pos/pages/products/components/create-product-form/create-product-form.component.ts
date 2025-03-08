@@ -1,14 +1,9 @@
 import { Component, Directive, inject, Input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  AbstractControl,
-  FormBuilder,
   FormControl,
   FormGroup,
-  NG_VALIDATORS,
   ReactiveFormsModule,
-  ValidationErrors,
-  ValidatorFn,
   Validators,
 } from '@angular/forms';
 import { ProductService } from '../../../../services/product.service';
@@ -39,7 +34,7 @@ export class CreateProductFormComponent {
         Validators.required,
         Validators.pattern(/^[0-9]{5}$/),
       ]),
-      // initials: new FormControl('', [Validators.required]),
+      initials: new FormControl('', [Validators.required]),
       is_weighed: new FormControl(false, [Validators.required]),
       name: new FormControl('', [Validators.required]),
       availability_in_deposit: new FormControl('', [
@@ -59,6 +54,10 @@ export class CreateProductFormComponent {
 
   ngOnInit(): void {
     console.log('Se ejecuta el ngOnInit');
+
+    this.form.get('name')?.valueChanges.subscribe((value) => {
+      this.generarIniciales(value);
+    });
 
     this.form.get('price_by_kg')?.disable();
     this.form.get('is_weighed')?.valueChanges.subscribe((value: boolean) => {
@@ -140,6 +139,21 @@ export class CreateProductFormComponent {
         }
       }
     });
+  }
+
+  generarIniciales(nombre: string) {
+    if (!nombre) {
+      this.form.patchValue({ initials: '' });
+      return;
+    }
+
+    // Obtener las iniciales de las palabras
+    const iniciales = nombre
+      .split(/\s+/) // Dividir por espacios
+      .map((palabra) => palabra[0]?.toUpperCase() || '') // Tomar la primera letra en mayúscula
+      .join('');
+
+    this.form.patchValue({ initials: iniciales });
   }
 
   logInvalidFields() {
