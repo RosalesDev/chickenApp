@@ -37,8 +37,8 @@
             <td [@quantityAnimation]="product.quantity">
               {{ product.quantity }}
             </td>
-            <td>{{ product.price_by_unit | currency }}</td>
-            <td>{{ product.price_by_unit! * product.quantity | currency }}</td>
+            <td>{{ product.priceByUnit | currency }}</td>
+            <td>{{ product.priceByUnit! * product.quantity | currency }}</td>
             <td class="text-center">
               <i
                 [class]="

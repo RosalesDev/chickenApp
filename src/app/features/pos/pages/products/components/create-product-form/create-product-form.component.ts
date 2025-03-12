@@ -1,6 +1,7 @@
 import { Component, Directive, inject, Input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
+  FormBuilder,
   FormControl,
   FormGroup,
   ReactiveFormsModule,
@@ -8,7 +9,6 @@ import {
 } from '@angular/forms';
 import { ProductService } from '../../../../services/product.service';
 import { Product } from '../../../../../../core/models/product-model';
-import { ProductDto } from '../../../../../../core/dtos/ProductDto';
 
 @Component({
   selector: 'app-create-product-form',
@@ -20,35 +20,45 @@ export class CreateProductFormComponent {
   @Input() showProductForm: boolean = false;
   productService = inject(ProductService);
   products: Product[] = [];
+  fb = inject(FormBuilder);
   form: FormGroup;
 
   constructor() {
-    this.form = new FormGroup({
-      codeType: new FormControl('barcode', [Validators.required]),
-      barcode: new FormControl('', [
-        Validators.required,
-        Validators.minLength(6),
-        Validators.pattern(/^[0-9]/),
-      ]),
-      pluCode: new FormControl('', [
-        Validators.required,
-        Validators.pattern(/^[0-9]{5}$/),
-      ]),
-      initials: new FormControl('', [Validators.required]),
-      is_weighed: new FormControl(false, [Validators.required]),
-      name: new FormControl('', [Validators.required]),
-      availability_in_deposit: new FormControl('', [
-        Validators.required,
-        Validators.pattern(/^(?:0|[1-9]\d*)(?:[.,]\d+)?$/),
-      ]),
-      price_by_unit: new FormControl('', [
-        Validators.required,
-        Validators.pattern(/^(?:0|[1-9]\d*)(?:[.,]\d+)?$/),
-      ]),
-      price_by_kg: new FormControl('', [
-        Validators.required,
-        Validators.pattern(/^(?:0|[1-9]\d*)(?:[.,]\d+)?$/),
-      ]),
+    this.form = this.fb.group({
+      codeType: ['barcode', [Validators.required]],
+      barcode: [
+        '',
+        [
+          Validators.required,
+          Validators.minLength(6),
+          Validators.pattern(/^[0-9]/),
+        ],
+      ],
+      pluCode: ['', [Validators.required, Validators.pattern(/^[0-9]{5}$/)]],
+      initials: ['', [Validators.required]],
+      is_weighed: [false, [Validators.required]],
+      name: ['', [Validators.required]],
+      availability_in_deposit: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(/^(?:0|[1-9]\d*)(?:[.,]\d+)?$/),
+        ],
+      ],
+      price_by_unit: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(/^(?:0|[1-9]\d*)(?:[.,]\d+)?$/),
+        ],
+      ],
+      price_by_kg: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(/^(?:0|[1-9]\d*)(?:[.,]\d+)?$/),
+        ],
+      ],
     });
   }
 
@@ -166,17 +176,17 @@ export class CreateProductFormComponent {
   }
 
   async createProduct(): Promise<void> {
-    console.log('Entra a crear prod.');
-    console.log(this.form);
-    this.logInvalidFields();
-
-    if (this.form.valid) {
-      const newProduct: ProductDto = new ProductDto();
-      newProduct.barcode = this.form.get('barcode')?.value ?? null;
-      await this.productService.createProduct(newProduct.toProduct(''));
-      // this.products.push(newProduct);
-      this.closeProductForm;
+    if (this.form.invalid) {
+      this.logInvalidFields();
+      alert('Formulario inválido');
+      return;
     }
+
+    await this.productService.saveProduct(
+      this.productService.mapProductFormToProduct(this.form)
+    );
+    // this.products.push(newProduct);
+    this.closeProductForm;
   }
 
   closeProductForm(): void {

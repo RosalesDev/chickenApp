@@ -58,7 +58,7 @@ export class PosComponent {
     // Recalcular el subtotal automáticamente cuando cambie la lista de productos
     effect(() => {
       const total = this.scannedProducts().reduce(
-        (sum, product) => sum + product.price_by_unit! * product.quantity,
+        (sum, product) => sum + product.priceByUnit! * product.quantity,
         0
       );
       this.subtotal.set(total);

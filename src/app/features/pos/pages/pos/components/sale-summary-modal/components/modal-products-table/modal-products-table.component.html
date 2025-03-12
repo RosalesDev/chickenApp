@@ -13,9 +13,9 @@
     <tr class="text-center">
       <td>{{ product.name }}</td>
       <td>{{ product.quantity }}</td>
-      <td>${{ product.price_by_unit }}</td>
-      <td>${{ product.price_by_kg }}</td>
-      <td>{{ product.price_by_unit! * product.quantity | currency }}</td>
+      <td>${{ product.priceByUnit }}</td>
+      <td>${{ product.priceByKg }}</td>
+      <td>{{ product.priceByUnit | currency }}</td>
     </tr>
     }
   </tbody>
