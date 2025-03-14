@@ -1,36 +1,53 @@
-<table class="table">
-  <thead>
-    <tr class="text-center">
-      <th scope="col">INICIALES</th>
-      <th scope="col">NOMBRE</th>
-      <th scope="col">STOCK</th>
-      <th scope="col">PRECIO POR UNIDAD</th>
-      <th scope="col">PRECIO POR KG</th>
-      @if (isAdmin) {
-      <th scope="col">ACCIONES</th>
-      }
-    </tr>
-  </thead>
-  <tbody>
-    @for(product of products; track product.id){
-    <tr class="text-center">
-      <td>{{ product.initials }}</td>
-      <td>{{ product.name }}</td>
-      <td>{{ product.availabilityInDeposit }}</td>
-      <td>${{ product.priceByUnit }}</td>
-      <td>${{ product.priceByKg }}</td>
-      @if(isAdmin){
-      <td>
-        <button class="btn btn-primary btn-sm">Editar</button>
-        <button
-          class="btn btn-danger btn-sm"
-          (click)="deleteProductById(product.id!)"
-        >
-          Eliminar
-        </button>
-      </td>
-      }
-    </tr>
-    }
-  </tbody>
-</table>
+<div class="card mt-5 shadow m-auto">
+  <div class="card-header text-center">
+    <div class="h5 my-1">LISTA DE PRODUCTOS</div>
+  </div>
+  <div class="card-body">
+    <table class="table table-striped">
+      <thead>
+        <tr class="text-center">
+          <th scope="col">INICIALES</th>
+          <th scope="col">NOMBRE</th>
+          <th scope="col">STOCK</th>
+          <th scope="col">PRECIO POR UNIDAD</th>
+          <th scope="col">PRECIO POR KG</th>
+          @if (isAdmin) {
+          <th scope="col">ACCIONES</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for(product of products; track product.id){
+        <tr class="text-center">
+          <td>{{ product.initials }}</td>
+          <td>{{ product.name }}</td>
+          <td>{{ product.availabilityInDeposit }}</td>
+          <td>${{ product.priceByUnit }}</td>
+          <td>${{ product.priceByKg }}</td>
+          @if(isAdmin){
+          <td>
+            <div class="row justify-content-center">
+              <div class="col-1"></div>
+              <div class="col-2">
+                <button class="btn btn-info btn-sm opacity-75">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
+              </div>
+              <div class="col-2">
+                <button
+                  class="btn btn-danger btn-sm opacity-75"
+                  (click)="deleteProductById(product.id!)"
+                >
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </div>
+              <div class="col-1"></div>
+            </div>
+          </td>
+          }
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
