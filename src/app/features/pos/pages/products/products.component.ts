@@ -75,7 +75,7 @@ export class ProductsComponent {
 
   deleteProduct(id: string): void {
     if (confirm('¿Estás seguro de eliminar este producto?')) {
-      this.productService.deleteProduct(id).then(() => {
+      this.productService.deleteProductById(id).then(() => {
         this.products = this.products.filter((p) => p.id !== id);
       });
     }

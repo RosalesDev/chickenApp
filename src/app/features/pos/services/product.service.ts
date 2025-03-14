@@ -94,9 +94,11 @@ export class ProductService {
     await updateDoc(productRef, product); // Actualiza los datos en Firestore
   }
   // Eliminar producto
-  async deleteProduct(id: string): Promise<void> {
+  async deleteProductById(id: string): Promise<void> {
     const productRef = doc(this.productsCollection, id);
-    await deleteDoc(productRef);
+    await deleteDoc(productRef)
+      .then(() => console.log('Documento borrado'))
+      .catch((error) => console.error('Error al borrar el documento:', error));
   }
 
   // Buscar productos por nombre

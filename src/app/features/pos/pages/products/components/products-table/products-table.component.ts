@@ -32,4 +32,13 @@ export class ProductsTableComponent {
         this.isLoading = false;
       });
   }
+  deleteProductById(id: string): void {
+    this.isLoading = true;
+    if (confirm('¿Estás seguro de eliminar este producto?')) {
+      this.productService.deleteProductById(id).then(() => {
+        this.products = this.products.filter((p) => p.id !== id);
+      });
+    }
+    this.isLoading = false;
+  }
 }
