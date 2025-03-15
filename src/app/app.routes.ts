@@ -5,6 +5,7 @@ import { authGuard } from './core/guards/auth.guard';
 import { PosComponent } from './features/pos/pages/pos/pos.component';
 import { ProductsComponent } from './features/pos/pages/products/products.component';
 import { CreateProductFormComponent } from './features/pos/pages/products/components/create-product-form/create-product-form.component';
+import { UnderconstructionpageComponent } from './shared/underconstructionpage/underconstructionpage.component';
 
 export const routes: Routes = [
   {
@@ -18,6 +19,11 @@ export const routes: Routes = [
     component: LoginComponent,
   },
   {
+    path: 'under-construction',
+    title: 'Página en construcción',
+    component: UnderconstructionpageComponent,
+  },
+  {
     path: 'home',
     title: 'ChickenApp Home',
     component: HomeComponent,
@@ -26,7 +32,7 @@ export const routes: Routes = [
         path: 'pos',
         title: 'ChickenApp POS',
         component: PosComponent,
-        //canActivate: [authGuard],
+        // canActivate: [authGuard],
       },
       {
         path: 'products',
@@ -49,6 +55,6 @@ export const routes: Routes = [
         //canActivate: [authGuard],
       },
     ],
-    //canActivate: [authGuard],
+    canActivate: [authGuard],
   },
 ];

@@ -12,7 +12,7 @@
         </a>
         <ul class="nav nav-pills flex-column mb-auto" id="menu">
           <li class="nav-item">
-            <a href="#" class="nav-link text-white">
+            <a class="nav-link text-white" routerLink="/home">
               <i class="fs-4 bi-house"></i>
               <span class="ms-1 d-none d-sm-inline">Home</span>
             </a>
@@ -65,7 +65,7 @@
             </a>
           </li>
           <li>
-            <a href="#" class="nav-link text-white">
+            <a class="nav-link text-white" routerLink="/under-construction">
               <i class="fs-4 bi-people"></i>
               <span class="ms-1 d-none d-sm-inline">Clientes</span>
             </a>
@@ -97,7 +97,12 @@
               <hr class="dropdown-divider" />
             </li>
             <li>
-              <a class="dropdown-item" href="#" (click)="logOut()">Sign out</a>
+              <a
+                class="dropdown-item"
+                routerLink="/auth/login"
+                (click)="logOut()"
+                >Sign out</a
+              >
             </li>
           </ul>
         </div>

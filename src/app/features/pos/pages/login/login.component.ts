@@ -23,6 +23,8 @@ export class LoginComponent {
     private router: Router
   ) {}
 
+  NgOnInit() {}
+
   async login() {
     this.isLoading = true;
     this.errorMessage = '';
