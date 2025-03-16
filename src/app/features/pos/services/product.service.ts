@@ -5,6 +5,7 @@ import {
   deleteDoc,
   doc,
   DocumentData,
+  getDoc,
   getDocs,
   getFirestore,
   limit,
@@ -96,9 +97,25 @@ export class ProductService {
   // Eliminar producto
   async deleteProductById(id: string): Promise<void> {
     const productRef = doc(this.productsCollection, id);
-    await deleteDoc(productRef)
-      .then(() => console.log('Documento borrado'))
-      .catch((error) => console.error('Error al borrar el documento:', error));
+    return getDoc(productRef).then((docSnap) => {
+      if (!docSnap.exists()) {
+        return Promise.reject(
+          new Error(`El producto con ID "${id}" no existe.`)
+        );
+      }
+      return deleteDoc(productRef);
+    });
+    // try {
+    //   const productRef = doc(this.productsCollection, id);
+    //   const docSnap = await getDoc(productRef);
+    //   if (!docSnap.exists()) {
+    //     throw new Error(`El documento con ID "${id}" no existe.`);
+    //   }
+    //   await deleteDoc(productRef);
+    //   console.log('Documento borrado');
+    // } catch (error) {
+    //   console.error('Error al borrar el documento:', error);
+    // }
   }
 
   // Buscar productos por nombre

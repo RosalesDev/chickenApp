@@ -1,43 +1,50 @@
-<div class="login-container">
-  <h2>Login</h2>
+<div class="container d-flex justify-content-center">
+  <div class="card shadow w-50 my-5">
+    <div class="card-header"><h2>Login</h2></div>
+    <div class="card-body p-4">
+      <form (ngSubmit)="login()">
+        <div class="form-group">
+          <label for="email">Email:</label>
+          <input
+            type="email"
+            id="email"
+            [(ngModel)]="email"
+            name="email"
+            required
+            class="form-control"
+          />
+        </div>
 
-  <form (ngSubmit)="login()">
-    <div class="form-group">
-      <label for="email">Email:</label>
-      <input
-        type="email"
-        id="email"
-        [(ngModel)]="email"
-        name="email"
-        required
-        class="form-control"
-      />
+        <div class="form-group">
+          <label for="password">Password:</label>
+          <input
+            type="password"
+            id="password"
+            [(ngModel)]="password"
+            name="password"
+            required
+            class="form-control"
+          />
+        </div>
+
+        <button
+          type="submit"
+          [disabled]="isLoading"
+          class="btn btn-primary w-100 fs-5"
+        >
+          @if(isLoading){
+          <span>Loading...</span>
+          }@else {
+          <span>Login</span>
+          }
+        </button>
+
+        @if(errorMessage){
+        <p class="error-message">
+          {{ errorMessage }}
+        </p>
+        }
+      </form>
     </div>
-
-    <div class="form-group">
-      <label for="password">Password:</label>
-      <input
-        type="password"
-        id="password"
-        [(ngModel)]="password"
-        name="password"
-        required
-        class="form-control"
-      />
-    </div>
-
-    <button type="submit" [disabled]="isLoading" class="btn btn-primary">
-      @if(isLoading){
-      <span>Loading...</span>
-      }@else {
-      <span>Login</span>
-      }
-    </button>
-
-    @if(errorMessage){
-    <p class="error-message">
-      {{ errorMessage }}
-    </p>
-    }
-  </form>
+  </div>
 </div>

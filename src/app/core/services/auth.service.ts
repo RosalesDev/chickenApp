@@ -1,8 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import {
+  browserLocalPersistence,
   //Auth,
   getAuth,
   onAuthStateChanged,
+  setPersistence,
   signInWithEmailAndPassword,
   signOut,
   User,
@@ -20,6 +22,10 @@ export class AuthService {
 
   constructor() {
     onAuthStateChanged(this.auth, (user) => this.user$.next(user));
+
+    setPersistence(this.auth, browserLocalPersistence).catch((error) => {
+      console.error('Error configurando la persistencia:', error);
+    });
   }
 
   login(email: string, password: string) {
@@ -27,7 +33,7 @@ export class AuthService {
   }
 
   logout() {
-    console.log('Usuairo logueado: ', this.auth.currentUser);
+    console.log('Usuairo logueado: ', this.auth.currentUser?.email);
     localStorage.removeItem('token');
     return signOut(this.auth);
   }

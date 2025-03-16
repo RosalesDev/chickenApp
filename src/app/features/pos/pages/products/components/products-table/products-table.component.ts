@@ -1,6 +1,7 @@
 import { Component, inject, Input } from '@angular/core';
 import { Product } from '../../../../../../core/models/product-model';
 import { ProductService } from '../../../../services/product.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-products-table',
@@ -33,12 +34,43 @@ export class ProductsTableComponent {
       });
   }
   deleteProductById(id: string): void {
-    this.isLoading = true;
-    if (confirm('¿Estás seguro de eliminar este producto?')) {
-      this.productService.deleteProductById(id).then(() => {
-        this.products = this.products.filter((p) => p.id !== id);
-      });
-    }
-    this.isLoading = false;
+    Swal.fire({
+      title: 'Eliminar producto',
+      text: '¿Estás seguro de eliminar este producto?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Eliminar',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.isLoading = true;
+        this.productService
+          .deleteProductById(id) // Corrección en la concatenación del ID
+          .then(() => {
+            this.products = this.products.filter(
+              (product) => product.id !== id
+            );
+            Swal.fire({
+              title: 'Eliminado!',
+              text: 'Se ha eliminado el producto correctamente',
+              icon: 'success',
+            });
+          })
+          .catch((error) => {
+            console.error(error);
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Ocurrió un error al eliminar el producto',
+            });
+          })
+          .finally(() => {
+            this.isLoading = false; // Se ejecuta siempre al final
+          });
+      } else {
+        this.isLoading = false; // Si cancela, también dejamos de cargar
+      }
+    });
   }
 }

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../../core/services/auth.service';
 import { Router } from '@angular/router';
@@ -22,8 +22,6 @@ export class LoginComponent {
     private userService: UserService,
     private router: Router
   ) {}
-
-  NgOnInit() {}
 
   async login() {
     this.isLoading = true;
