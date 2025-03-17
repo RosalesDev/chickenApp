@@ -23,6 +23,7 @@ import {
   mapToProductDto,
 } from '../../../core/mapper/product-mapper';
 import { FormGroup } from '@angular/forms';
+import Fuse from 'fuse.js';
 
 @Injectable({
   providedIn: 'root',
@@ -32,6 +33,7 @@ export class ProductService {
   private firestore = getFirestore(); // Obtiene la instancia Firestore
   private productsSignal = signal<Product[]>([]); // Signal para almacenar los productos
   private productsCollection = collection(this.firestore, 'products'); // Referencia a la colección
+  fuse: Fuse<Product> | undefined;
 
   async getProductByBarcode(barcode: string) {
     const productsRef = collection(this.firestore, 'products'); // Referencia a la colección
@@ -74,20 +76,23 @@ export class ProductService {
       throw error;
     }
   }
-  // Leer productos (paginados)
-  async getProducts(pageSize: number, lastVisible?: any): Promise<Product[]> {
-    let q = query(this.productsCollection, orderBy('name'), limit(pageSize));
-    if (lastVisible) {
-      q = query(
-        this.productsCollection,
-        orderBy('name'),
-        startAfter(lastVisible),
-        limit(pageSize)
-      );
-    }
-
+  // Leer productos
+  async getProducts(): Promise<Product[]> {
+    let productList: Product[] = [];
+    let q = query(this.productsCollection, orderBy('name'));
     const querySnapshot = await getDocs(q);
-    return this.mapSnapshotToProducts(querySnapshot);
+    productList = this.mapSnapshotToProducts(querySnapshot);
+    this.fuse = new Fuse(productList, {
+      keys: ['name'],
+      threshold: 0.3, // Ajusta la tolerancia a errores
+      includeScore: true,
+    });
+    return productList;
+  }
+
+  searchProducts(query: string): Product[] {
+    console.log(this.fuse?.search(query).map((result) => result.item));
+    return this.fuse?.search(query).map((result) => result.item) || [];
   }
   // Actualizar un producto
   async updateProduct(id: string, product: Partial<Product>): Promise<void> {

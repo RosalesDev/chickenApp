@@ -7,9 +7,9 @@
           <div class="input-group">
             <input
               type="text"
-              class="form-control rounded-4"
+              class="form-control rounded-4 shadow"
               placeholder="Buscar productos por nombre"
-              (input)="searchProducts('')"
+              (input)="searchProducts($event)"
             />
             @if(isSearching){
             <span class="input-group-text">

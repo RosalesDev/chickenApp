@@ -16,7 +16,6 @@ export class ProductsComponent {
   products: Product[] = [];
   searchQuery = '';
   isAdmin = true; // Cambia esto según tu lógica de roles
-  lastVisible: any;
   limit = 10; // Tamaño de página
   isSearching = false; // Indica si se está buscando
   isLoading = false; // Indica si se están cargando productos
@@ -39,34 +38,33 @@ export class ProductsComponent {
 
   loadProducts(): void {
     this.isLoading = true;
-    this.productService
-      .getProducts(this.limit, this.lastVisible)
-      .then((newProducts: Product[]) => {
-        this.products = [...this.products, ...newProducts];
-        this.lastVisible = newProducts[newProducts.length - 1]; // Actualiza el último documento visible
-        this.isLoading = false;
-      });
+    this.productService.getProducts().then((newProducts: Product[]) => {
+      this.products = [...this.products, ...newProducts];
+      this.isLoading = false;
+    });
   }
 
   // Buscar productos por nombre
-  async searchProducts(query: string): Promise<void> {
+  async searchProducts(event: Event): Promise<void> {
+    let query = (event.target as HTMLInputElement).value;
+
     if (!query) {
       // Si no hay texto de búsqueda, recarga los productos paginados
       this.isSearching = false;
       this.products = [];
-      this.lastVisible = null;
       await this.loadProducts();
       return;
     }
-
-    try {
-      this.isSearching = true; // Indicar que se está buscando
-      const searchResults = await this.productService.getProductsByName(query);
-      this.products = searchResults; // Mostrar solo los productos que coincidan
-      this.isSearching = false;
-    } catch (error) {
-      console.error('Error al buscar productos:', error);
-      this.isSearching = false;
+    if (query.length > 3) {
+      try {
+        this.isSearching = true; // Indicar que se está buscando
+        const searchResults = await this.productService.searchProducts(query);
+        this.products = searchResults; // Mostrar solo los productos que coincidan
+        this.isSearching = false;
+      } catch (error) {
+        console.error('Error al buscar productos:', error);
+        this.isSearching = false;
+      }
     }
   }
   editProduct(product: Product) {

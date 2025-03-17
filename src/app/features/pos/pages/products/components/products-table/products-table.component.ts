@@ -26,13 +26,24 @@ export class ProductsTableComponent {
   loadProducts(): void {
     this.isLoading = true;
     this.productService
-      .getProducts(this.limit, this.lastVisible)
+      .getProducts()
       .then((newProducts: Product[]) => {
         this.products = [...this.products, ...newProducts];
-        this.lastVisible = newProducts[newProducts.length - 1]; // Actualiza el último documento visible
+      })
+      .catch((error) => {
+        console.error(error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Ocurrió un error al cargar los productos',
+        });
+      })
+      .finally(() => {
         this.isLoading = false;
       });
   }
+
+  // Eliminar producto
   deleteProductById(id: string): void {
     Swal.fire({
       title: 'Eliminar producto',
