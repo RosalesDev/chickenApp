@@ -10,31 +10,20 @@ export const authGuard: CanActivateFn = async (route, state) => {
 
   const token = localStorage.getItem('token');
 
-  if (!authService.isLoggedIn() && !token) {
+  if (token) {
+    const tokenData = JSON.parse(atob(token.split('.')[1])); // Decodifica el payload del JWT
+    const isExpired = Date.now() >= tokenData.exp * 1000; // Verifica si está expirado
+    if (isExpired) {
+      localStorage.removeItem('token'); // Limpia token
+      router.navigate(['auth/login']);
+      return false;
+    }
+    return true;
+  }
+
+  if (!authService.isLoggedIn()) {
     router.navigate(['auth/login']);
     return false;
   }
   return true;
-
-  // const token = localStorage.getItem('token');
-  // loggedUser.set(await authService.currentUser());
-  // /*TODO: Revisar por que no encuentra usuario logueado cuando vuelvo a la pagina
-  //       de login sin haber hecho logout*/
-  // if (!token || loggedUser() == null) {
-  //   router.navigate(['auth/login']);
-  //   return false;
-  // }
-
-  // // Decodificar el token y verificar la fecha de expiración
-  // const tokenData = JSON.parse(atob(token.split('.')[1])); // Decodifica el payload del JWT
-  // console.log('Token data: ', tokenData);
-  // const isExpired = Date.now() >= tokenData.exp * 1000; // Verifica si está expirado
-
-  // if (isExpired) {
-  //   localStorage.removeItem('token'); // Limpia el token
-  //   router.navigate(['auth/login']);
-  //   return false;
-  // }
-
-  // return true; // El token es válido
 };

@@ -23,6 +23,7 @@ export class CreateProductFormComponent {
   form: FormGroup;
 
   constructor() {
+    console.log('Se ejecuta el constructor');
     this.form = this.fb.group({
       codeType: ['barcode', [Validators.required]],
       barcode: [
@@ -63,7 +64,6 @@ export class CreateProductFormComponent {
 
   ngOnInit(): void {
     console.log('Se ejecuta el ngOnInit');
-
     this.form.get('name')?.valueChanges.subscribe((value) => {
       this.generarIniciales(value);
     });
@@ -80,18 +80,18 @@ export class CreateProductFormComponent {
 
     this.form.get('pluCode')?.valueChanges.subscribe((value: string) => {
       const regex = /^\d+$/;
-      if (!regex.test(value) && value.length > 0) {
+      if (!regex.test(value) && value?.length > 0) {
         this.form.get('pluCode')?.setValue(value.slice(0, value.length - 1)),
           { emitEvent: false };
       }
-      if (value.length > 5) {
+      if (value?.length > 5) {
         this.form.get('pluCode')?.setValue(value.slice(0, 5)),
           { emitEvent: false };
       }
     });
     this.form.get('barcode')?.valueChanges.subscribe((value: string) => {
       const regex = /^\d+$/;
-      if (!regex.test(value) && value.length > 0) {
+      if (!regex.test(value) && value?.length > 0) {
         this.form.get('barcode')?.setValue(value.slice(0, value.length - 1)),
           { emitEvent: false };
       }
@@ -101,7 +101,7 @@ export class CreateProductFormComponent {
       .get('availability_in_deposit')
       ?.valueChanges.subscribe((value: string) => {
         const regex = /^(?:0|[1-9]\d*)(?:[.,]\d*)?$/;
-        if (!regex.test(value) && value.length > 0) {
+        if (!regex.test(value) && value?.length > 0) {
           this.form
             .get('availability_in_deposit')
             ?.setValue(value.slice(0, value.length - 1)),
@@ -110,19 +110,19 @@ export class CreateProductFormComponent {
       });
     this.form.get('price_by_unit')?.valueChanges.subscribe((value: string) => {
       const regex = /^(?:0|[1-9]\d*)(?:[.,]\d*)?$/;
-      if (!regex.test(value) && value.length > 0) {
+      if (!regex.test(value) && value?.length > 0) {
         this.form
           .get('price_by_unit')
-          ?.setValue(value.slice(0, value.length - 1)),
+          ?.setValue(value.slice(0, value?.length - 1)),
           { emitEvent: false };
       }
     });
     this.form.get('price_by_kg')?.valueChanges.subscribe((value: string) => {
       const regex = /^(?:0|[1-9]\d*)(?:[.,]\d*)?$/;
-      if (!regex.test(value) && value.length > 0) {
+      if (!regex.test(value) && value?.length > 0) {
         this.form
           .get('price_by_kg')
-          ?.setValue(value.slice(0, value.length - 1)),
+          ?.setValue(value.slice(0, value?.length - 1)),
           { emitEvent: false };
       }
     });

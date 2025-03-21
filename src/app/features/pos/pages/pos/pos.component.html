@@ -25,6 +25,7 @@
             <th scope="col">Código</th>
             <th scope="col">Cantidad</th>
             <th scope="col">Precio Unitario</th>
+            <th scope="col">Precio por Kg.</th>
             <th scope="col">Subtotal</th>
             <th scope="col">Acciones</th>
           </tr>
@@ -33,12 +34,21 @@
           @for(product of scannedProducts(); track product.id){
           <tr [@fadeOutAnimation] class="text-center">
             <td>{{ product.name }}</td>
-            <td>{{ product.barcode }}</td>
+            <td>
+              {{ product.barcode != "" ? product.barcode : product.pluCode }}
+            </td>
             <td [@quantityAnimation]="product.quantity">
               {{ product.quantity }}
             </td>
             <td>{{ product.priceByUnit | currency }}</td>
-            <td>{{ product.priceByUnit! * product.quantity | currency }}</td>
+            <td>{{ product.priceByKg | currency }}</td>
+            <td>
+              {{
+                product.priceByUnit != 0
+                  ? product.priceByUnit! * product.quantity
+                  : (product.priceByKg! * product.quantity | currency)
+              }}
+            </td>
             <td class="text-center">
               <i
                 [class]="

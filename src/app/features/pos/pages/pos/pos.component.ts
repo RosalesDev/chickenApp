@@ -58,7 +58,8 @@ export class PosComponent {
     // Recalcular el subtotal automáticamente cuando cambie la lista de productos
     effect(() => {
       const total = this.scannedProducts().reduce(
-        (sum, product) => sum + product.priceByUnit! * product.quantity,
+        (sum, product) =>
+          sum + (product.priceByUnit! + product.priceByKg!) * product.quantity,
         0
       );
       this.subtotal.set(total);
@@ -119,13 +120,14 @@ export class PosComponent {
           );
           if (productByPlu.length > 0) {
             const newProduct = {
-              ...product()[0], // Información del producto
+              ...productByPlu[0], // Información del producto
               quantity: 1, // Inicializa la cantidad en 1
             };
             this.scannedProducts.update((products) => [
               ...products,
               newProduct,
             ]);
+            console.log('Scanned Products: ', this.scannedProducts());
           } else {
             console.log('No se encontró el producto');
           }

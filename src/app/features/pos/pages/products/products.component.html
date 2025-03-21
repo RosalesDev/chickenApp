@@ -1,7 +1,17 @@
 <div class="container mt-4">
   <div class="row">
     <div class="col-12">
-      <div class="row justify-content-center">
+      <div class="row justify-content-between">
+        <div class="col-4">
+          <!-- Botón para abrir el formulario de creación de productos -->
+          <button
+            type="button"
+            class="btn btn-primary"
+            routerLink="/home/create-product"
+          >
+            Crear Producto
+          </button>
+        </div>
         <div class="col-4">
           <!-- Buscador de productos -->
           <div class="input-group">
@@ -21,72 +31,7 @@
           </div>
         </div>
       </div>
-      <div class="row">
-        <div class="col">
-          <!-- Botón para abrir el formulario de creación de productos -->
-          <button
-            type="button"
-            class="btn btn-primary"
-            routerLink="/home/create-product"
-          >
-            Crear Producto
-          </button>
-        </div>
-      </div>
-
       <app-products-table [products]="products"></app-products-table>
-
-      <!-- Lista de productos
-      <ul class="list-group">
-        @for(product of products; track product.id){
-        <li
-          class="list-group-item d-flex justify-content-between align-items-center"
-        >
-          <div>
-            <h5>{{ product.name }}</h5>
-            <small>{{ product.initials }}</small>
-          </div>
-          <div>
-            <span class="badge bg-info">{{ product.quantity }} en stock</span>
-            <span class="badge bg-warning">{{
-              product.price_by_unit ? "$" + product.price_by_unit : ""
-            }}</span>
-            <span class="badge bg-success">{{
-              product.price_by_kg ? "$" + product.price_by_kg : ""
-            }}</span>
-          </div>
-          
-          @if(isAdmin){
-          <div>
-            <button
-              class="btn btn-primary btn-sm"
-              (click)="editProduct(product)"
-            >
-              Editar
-            </button>
-            <button
-              class="btn btn-danger btn-sm"
-              (click)="deleteProduct(product.id)"
-            >
-              Eliminar
-            </button>
-          </div>
-          }
-        </li>
-        }
-      </ul> -->
-      <!-- Paginación -->
-      <!-- @if(!isSearching && products.length > 0){
-      <div class="d-flex justify-content-center mt-3">
-        <button
-          class="btn btn-primary"
-          (click)="loadProducts()"
-          [disabled]="isLoading"
-        >
-          Cargar más productos
-        </button>
-      </div> 
-      }-->
     </div>
   </div>
 </div>

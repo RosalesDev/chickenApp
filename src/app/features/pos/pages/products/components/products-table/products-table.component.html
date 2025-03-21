@@ -20,7 +20,7 @@
         @for(product of products; track product.id){
         <tr class="text-center">
           <td>{{ product.initials }}</td>
-          <td>{{ product.name }}</td>
+          <td>{{ product.name.toUpperCase() }}</td>
           <td>{{ product.availabilityInDeposit }}</td>
           <td>${{ product.priceByUnit }}</td>
           <td>${{ product.priceByKg }}</td>

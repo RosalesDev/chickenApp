@@ -135,7 +135,10 @@ export class ProductService {
   }
   // Buscar productos por PLU
   async getProductsByPluCode(pluCode: number): Promise<Product[]> {
-    const q = query(this.productsCollection, where('pluCode', '==', pluCode));
+    const q = query(
+      this.productsCollection,
+      where('plu_code', '==', pluCode.toString())
+    );
     const querySnapshot = await getDocs(q);
     return this.mapSnapshotToProducts(querySnapshot);
   }
