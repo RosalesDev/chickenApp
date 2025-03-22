@@ -8,6 +8,7 @@ import {
 } from '@angular/forms';
 import { ProductService } from '../../../../services/product.service';
 import { Product } from '../../../../../../core/models/product-model';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-create-product-form',
@@ -21,8 +22,9 @@ export class CreateProductFormComponent {
   products: Product[] = [];
   fb = inject(FormBuilder);
   form: FormGroup;
+  isLoading = false;
 
-  constructor() {
+  constructor(private router: Router) {
     console.log('Se ejecuta el constructor');
     this.form = this.fb.group({
       codeType: ['barcode', [Validators.required]],
@@ -175,6 +177,8 @@ export class CreateProductFormComponent {
   }
 
   async createProduct(): Promise<void> {
+    this.isLoading = true;
+    this.showLoadingModal();
     if (this.form.invalid) {
       this.logInvalidFields();
       alert('Formulario inválido');
@@ -185,7 +189,27 @@ export class CreateProductFormComponent {
       this.productService.mapProductFormToProduct(this.form)
     );
     // this.products.push(newProduct);
-    this.closeProductForm;
+    this.isLoading = false;
+    this.hideModal();
+    this.router.navigate(['/home/products']);
+  }
+
+  private showLoadingModal(): void {
+    const modalElement = document.getElementById('loadingModal');
+    if (modalElement) {
+      modalElement.classList.add('show'); // Agrega la clase 'show'
+      modalElement.style.display = 'block'; // Muestra el modal
+      document.body.classList.add('modal-open'); // Evita el scroll en el fondo
+    }
+  }
+
+  private hideModal(): void {
+    const modalElement = document.getElementById('loadingModal');
+    if (modalElement) {
+      modalElement.classList.remove('show'); // Quita la clase 'show'
+      modalElement.style.display = 'none'; // Oculta el modal
+      document.body.classList.remove('modal-open'); // Restaura el scroll
+    }
   }
 
   closeProductForm(): void {

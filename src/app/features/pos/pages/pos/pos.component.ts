@@ -8,10 +8,8 @@ import {
 import { ProductService } from '../../services/product.service';
 import { CurrencyPipe } from '@angular/common';
 import { Product } from '../../../../core/models/product-model';
-import { AuthService } from '../../../../core/services/auth.service';
-import { Router } from '@angular/router';
 import { trigger, style, animate, transition } from '@angular/animations';
-import { ModalSpinnerComponent } from './components/modal-spinner/modal-spinner.component';
+import { ModalSpinnerComponent } from '../../../../shared/components/modal-spinner/modal-spinner.component';
 import { Sale } from '../../../../core/models/sale-model';
 import { SaleSummaryModalComponent } from './components/sale-summary-modal/sale-summary-modal.component';
 

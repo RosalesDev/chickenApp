@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, ElementRef, inject, ViewChild } from '@angular/core';
 import { Product } from '../../../../core/models/product-model';
 import { ProductService } from '../../services/product.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -21,6 +21,9 @@ export class ProductsComponent {
   isLoading = false; // Indica si se están cargando productos
   productForm: FormGroup;
   showProductForm = false;
+  isSearchVisible = false;
+
+  @ViewChild('searchInput') searchInput!: ElementRef;
 
   constructor(private fb: FormBuilder) {
     this.productForm = this.fb.group({
@@ -77,6 +80,15 @@ export class ProductsComponent {
         this.products = this.products.filter((p) => p.id !== id);
       });
     }
+  }
+
+  toggleSearch() {
+    this.isSearchVisible = !this.isSearchVisible;
+    setTimeout(() => {
+      if (this.isSearchVisible) {
+        this.searchInput.nativeElement.focus();
+      }
+    }, 300);
   }
 
   openProductForm(): void {

@@ -168,7 +168,15 @@
             }
           </div>
         </div>
-        }
+        } @if(isLoading){
+        <button class="btn btn-info w-100" [disabled]="isLoading">
+          <i class="bi bi-floppy"></i>
+          Guardando...
+          <div class="spinner-border spinner-border-sm" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </button>
+        }@else {
         <button
           type="submit"
           class="btn btn-primary w-100"
@@ -184,6 +192,7 @@
               : "Crear"
           }}
         </button>
+        }
       </div>
     </form>
   </div>
