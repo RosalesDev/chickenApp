@@ -9,4 +9,5 @@ export interface Product {
   priceByKg?: number; // Precio por kilogramo (opcional, solo si es por peso)
   priceByUnit?: number; // Precio por unidad (opcional, solo si no es por peso)
   quantity: number;
+  amount_to_pay?: number;
 }

@@ -6,6 +6,8 @@
     <table class="table table-striped">
       <thead>
         <tr class="text-center">
+          <th scope="col">PLU</th>
+          <th scope="col">Código</th>
           <th scope="col">INICIALES</th>
           <th scope="col">NOMBRE</th>
           <th scope="col">STOCK</th>
@@ -19,6 +21,8 @@
       <tbody>
         @for(product of products; track product.id){
         <tr class="text-center">
+          <td>{{ product.pluCode }}</td>
+          <td>{{ product.barcode }}</td>
           <td>{{ product.initials }}</td>
           <td>{{ product.name.toUpperCase() }}</td>
           <td>{{ product.availabilityInDeposit }}</td>

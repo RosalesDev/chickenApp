@@ -24,6 +24,7 @@ import {
 } from '../../../core/mapper/product-mapper';
 import { FormGroup } from '@angular/forms';
 import Fuse from 'fuse.js';
+import { ErrorModel } from '../../../core/models/error-model';
 
 @Injectable({
   providedIn: 'root',
@@ -33,6 +34,7 @@ export class ProductService {
   private firestore = getFirestore(); // Obtiene la instancia Firestore
   private productsSignal = signal<Product[]>([]); // Signal para almacenar los productos
   private productsCollection = collection(this.firestore, 'products'); // Referencia a la colección
+  allProducts = signal<Product[]>([]); // Lista de todos los productos
   fuse: Fuse<Product> | undefined;
 
   async getProductByBarcode(barcode: string) {
@@ -76,18 +78,26 @@ export class ProductService {
       throw error;
     }
   }
-  // Leer productos
-  async getProducts(): Promise<Product[]> {
+  /* ----------------------- OBTENER TODOS LOS PRODUCTOS ---------------------- */
+  async getProducts(): Promise<Product[] | ErrorModel> {
     let productList: Product[] = [];
     let q = query(this.productsCollection, orderBy('name'));
-    const querySnapshot = await getDocs(q);
-    productList = this.mapSnapshotToProducts(querySnapshot);
-    this.fuse = new Fuse(productList, {
-      keys: ['name'],
-      threshold: 0.3, // Ajusta la tolerancia a errores
-      includeScore: true,
-    });
-    return productList;
+    // const querySnapshot = await getDocs(q);
+    return getDocs(q)
+      .then((querySnapshot) => {
+        productList = this.mapSnapshotToProducts(querySnapshot);
+        this.allProducts.set(productList); // Actualiza la signal con los productos
+        this.fuse = new Fuse(productList, {
+          keys: ['name'],
+          threshold: 0.3, // Ajusta la tolerancia a errores
+          includeScore: true,
+        });
+        return productList;
+      })
+      .catch((error) => {
+        console.error('Error al obtener los productos:', error);
+        return { success: false, error: error.message };
+      });
   }
 
   searchProducts(query: string): Product[] {
@@ -123,7 +133,12 @@ export class ProductService {
     // }
   }
 
-  // Buscar productos por nombre
+  /**
+   *
+   * @param name - Nombre del producto a buscar.
+   * @description Busca productos por nombre en Firestore. Utiliza un rango de búsqueda para permitir coincidencias parciales.
+   * @returns
+   */
   async getProductsByName(name: string): Promise<Product[]> {
     const q = query(
       this.productsCollection,
@@ -134,11 +149,8 @@ export class ProductService {
     return this.mapSnapshotToProducts(querySnapshot);
   }
   // Buscar productos por PLU
-  async getProductsByPluCode(pluCode: number): Promise<Product[]> {
-    const q = query(
-      this.productsCollection,
-      where('plu_code', '==', pluCode.toString())
-    );
+  async getProductsByPluCode(pluCode: string): Promise<Product[]> {
+    const q = query(this.productsCollection, where('plu_code', '==', pluCode));
     const querySnapshot = await getDocs(q);
     return this.mapSnapshotToProducts(querySnapshot);
   }

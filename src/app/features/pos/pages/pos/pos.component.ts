@@ -1,10 +1,4 @@
-import {
-  Component,
-  effect,
-  inject,
-  signal,
-  WritableSignal,
-} from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { ProductService } from '../../services/product.service';
 import { CurrencyPipe } from '@angular/common';
 import { Product } from '../../../../core/models/product-model';
@@ -12,6 +6,7 @@ import { trigger, style, animate, transition } from '@angular/animations';
 import { ModalSpinnerComponent } from '../../../../shared/components/modal-spinner/modal-spinner.component';
 import { Sale } from '../../../../core/models/sale-model';
 import { SaleSummaryModalComponent } from './components/sale-summary-modal/sale-summary-modal.component';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-pos',
@@ -40,9 +35,12 @@ import { SaleSummaryModalComponent } from './components/sale-summary-modal/sale-
 })
 export class PosComponent {
   scannedProducts = signal<Product[]>([]); // Lista de productos escaneados
+  filteredProducts: Product[] = [];
+  selectedProduct!: Product;
   productsFoundByName = signal<Product[]>([]); // Resultado de la busqueda por nombre
   subtotal = signal<number>(0); // Subtotal calculado
   private productService = inject(ProductService); // Inyecta el servicio
+  showFilteredProducts = signal<boolean>(false);
   newSale = signal<Sale>(new Sale()); // Venta actual
   currentSaleSummary = signal<{
     products: any[];
@@ -63,7 +61,33 @@ export class PosComponent {
       this.subtotal.set(total);
     });
   }
+
   ngOnInit(): void {
+    if (
+      !sessionStorage.getItem('productList') ||
+      sessionStorage.getItem('productList') === '[]'
+    ) {
+      this.showLoadingModal();
+      this.productService
+        .getProducts()
+        .then((products) => {
+          sessionStorage.setItem(
+            'productList',
+            JSON.stringify(this.productService.allProducts())
+          );
+        })
+        .catch((error) => {
+          console.error('Error al obtener los productos:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Ocurrió un error al obtener los productos',
+          });
+        })
+        .finally(() => {
+          this.hideLoadingModal();
+        });
+    }
     document.getElementById('barcode-input')?.focus();
   }
   //TODO: Hacer que la venta se genere despues de que presionen el boton de finalizar venta.
@@ -75,22 +99,20 @@ export class PosComponent {
       total: this.subtotal(),
     }); // Actualiza el resumen de la venta.
   }
-
+  /**
+   *
+   * @param inputValue - Valor ingresado por el usuario.
+   * @description Busca un producto por nombre o código de barras.
+   * @returns
+   */
   async searchProduct(inputValue: string): Promise<void> {
     this.showLoadingModal();
     let inputType = /^\d+$/.test(inputValue) ? 'BARCODE' : 'PRODUCT_NAME';
     console.log('Tipo de busqueda:', inputType);
 
     if (inputType === 'PRODUCT_NAME') {
-      const products = await this.productService.getProductsByName(inputValue);
-      if (products.length === 0) {
-        this.hideModal();
-        console.log('No se encontraron productos');
-        return;
-      }
-      this.productsFoundByName.set(products);
-      console.log(this.productsFoundByName());
-      this.hideModal();
+      this.onSearchByName(inputValue);
+      this.hideLoadingModal();
     } else {
       const existingProduct = this.scannedProducts().find(
         (product) => product.barcode === inputValue
@@ -104,30 +126,46 @@ export class PosComponent {
             product.barcode === inputValue ? existingProduct : product
           )
         );
-        this.hideModal(); // Oculta el modal
+        this.hideLoadingModal(); // Oculta el modal
       } else {
         // Busca el producto por barcode en la base de datos
         const product = await this.productService.getProductByBarcode(
           inputValue
         );
-        // TODO:CONTINUAR AQUI. QUE HACER SI NO SE ENCUENTRA EL PRODUCTO
+        // BUSQUEDA POR PLU
         if (product().length === 0) {
-          const pluCode: number = Number(inputValue.slice(0, 5));
-          const productByPlu = await this.productService.getProductsByPluCode(
-            pluCode
+          const pluCode: string = inputValue.slice(1, 6);
+          const existingProduct = this.scannedProducts().find(
+            (product) => product.pluCode === pluCode
           );
-          if (productByPlu.length > 0) {
-            const newProduct = {
-              ...productByPlu[0], // Información del producto
-              quantity: 1, // Inicializa la cantidad en 1
-            };
-            this.scannedProducts.update((products) => [
-              ...products,
-              newProduct,
-            ]);
-            console.log('Scanned Products: ', this.scannedProducts());
+          if (existingProduct) {
+            existingProduct.quantity++;
+            this.scannedProducts.update((products) =>
+              products.map((product) =>
+                product.pluCode === pluCode ? existingProduct : product
+              )
+            );
+            this.hideLoadingModal(); // Oculta el modal
+            return;
           } else {
-            console.log('No se encontró el producto');
+            const productByPlu = await this.productService.getProductsByPluCode(
+              pluCode
+            );
+            if (productByPlu.length > 0) {
+              inputType = 'PLU';
+              const newProduct = {
+                ...productByPlu[0], // Información del producto
+                quantity: 1, // Inicializa la cantidad en 1
+                amount_to_pay: Number(inputValue.slice(6, 12)),
+              };
+              this.scannedProducts.update((products) => [
+                ...products,
+                newProduct,
+              ]);
+              console.log('Scanned Products: ', this.scannedProducts());
+            } else {
+              console.log('No se encontró el producto');
+            }
           }
         } else {
           const newProduct = {
@@ -137,7 +175,7 @@ export class PosComponent {
           this.scannedProducts.update((products) => [...products, newProduct]);
         }
 
-        this.hideModal(); // Oculta el modal
+        this.hideLoadingModal(); // Oculta el modal
       }
     }
   }
@@ -145,6 +183,24 @@ export class PosComponent {
   clearCart(): void {
     this.scannedProducts.set([]); // Limpia los productos
     this.subtotal.set(0); // Reinicia el subtotal
+  }
+  onSearchByName(searchTerm: string) {
+    const products = this.productService.allProducts();
+    if (searchTerm.length >= 3 && products) {
+      this.filteredProducts = products.filter((product: Product) =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      this.showFilteredProducts.set(this.filteredProducts.length > 0);
+    } else {
+      this.filteredProducts = [];
+    }
+  }
+
+  selectProduct(product: Product, input: HTMLInputElement): void {
+    this.selectedProduct = product;
+    console.log('Producto seleccionado:', this.selectedProduct);
+    this.showFilteredProducts.set(false);
+    input.value = '';
   }
 
   removeProduct(productId: string): void {
@@ -164,7 +220,10 @@ export class PosComponent {
         .filter((product): product is Product => product !== null)
     );
   }
-
+  /**
+   * * Muestra el modal de carga.
+   * * Se asegura de que el modal esté visible y evita el scroll del body.
+   */
   private showLoadingModal(): void {
     const modalElement = document.getElementById('loadingModal');
     if (modalElement) {
@@ -173,8 +232,11 @@ export class PosComponent {
       document.body.classList.add('modal-open'); // Evita el scroll en el fondo
     }
   }
-
-  private hideModal(): void {
+  /**
+   * * Oculta el modal de carga.
+   * * Se asegura de que el modal no esté visible y restaura el scroll del body.
+   */
+  private hideLoadingModal(): void {
     const modalElement = document.getElementById('loadingModal');
     if (modalElement) {
       modalElement.classList.remove('show'); // Quita la clase 'show'

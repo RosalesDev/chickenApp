@@ -4,6 +4,7 @@ import { ProductService } from '../../services/product.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ProductsTableComponent } from './components/products-table/products-table.component';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-products',
@@ -39,12 +40,22 @@ export class ProductsComponent {
   //   this.loadProducts();
   // }
 
-  loadProducts(): void {
+  async loadProducts() {
     this.isLoading = true;
-    this.productService.getProducts().then((newProducts: Product[]) => {
-      this.products = [...this.products, ...newProducts];
+    const result = await this.productService.getProducts();
+    if ('success' in result && result.success === false) {
       this.isLoading = false;
-    });
+      console.log(result.error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Ocurrió un error al cargar los productos',
+      });
+    } else {
+      // this.products = [...this.products, ...result as Product[]];
+      this.products = result as Product[];
+      this.isLoading = false;
+    }
   }
 
   // Buscar productos por nombre

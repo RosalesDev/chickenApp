@@ -2,18 +2,35 @@
   <div class="card-header">Nueva Venta</div>
   <div class="card-body">
     <!-- ------------------------ BUSCDOR DE PRODUCTOS ------------------------- -->
-    <div class="form-floating mb-3">
+    <div class="form-floating position-relative mb-3">
       <input
         id="barcode-input"
         type="text"
+        autocomplete="false"
+        suggestions="false"
         class="form-control"
         #barcodeInput
+        (keyup)="onSearchByName(barcodeInput.value)"
         (keyup.enter)="
           searchProduct(barcodeInput.value); barcodeInput.value = ''
         "
         placeholder="Escanea o ingresa un código"
       />
       <label for="barcode-input">Escanea o ingresa un código</label>
+      @if(showFilteredProducts()){
+      <ul class="list-group position-absolute w-100 shadow">
+        @for (product of filteredProducts; track product.id){
+        <li
+          class="list-group-item list-group-item-action"
+          role="button"
+          (click)="selectProduct(product, barcodeInput)"
+        >
+          {{ product.name }} - {{ product.priceByKg | currency }}/Kg. -
+          {{ product.priceByUnit | currency }}
+        </li>
+        }
+      </ul>
+      }
     </div>
     <!-- ------------------------- TABLA DE PRODUCTOS -------------------------- -->
     <div class="container">
@@ -22,7 +39,7 @@
         <thead>
           <tr class="text-center">
             <th scope="col">Producto</th>
-            <th scope="col">Código</th>
+            <th scope="col">PLU</th>
             <th scope="col">Cantidad</th>
             <th scope="col">Precio Unitario</th>
             <th scope="col">Precio por Kg.</th>
@@ -42,6 +59,9 @@
             </td>
             <td>{{ product.priceByUnit | currency }}</td>
             <td>{{ product.priceByKg | currency }}</td>
+            @if(product.amount_to_pay && product.amount_to_pay > 0){
+            <td>{{ product.amount_to_pay | currency }}</td>
+            }@else {
             <td>
               {{
                 product.priceByUnit != 0
@@ -49,6 +69,7 @@
                   : (product.priceByKg! * product.quantity | currency)
               }}
             </td>
+            }
             <td class="text-center">
               <i
                 [class]="

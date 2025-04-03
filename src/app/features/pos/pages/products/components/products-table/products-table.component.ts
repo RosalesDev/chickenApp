@@ -2,6 +2,7 @@ import { Component, inject, Input } from '@angular/core';
 import { Product } from '../../../../../../core/models/product-model';
 import { ProductService } from '../../../../services/product.service';
 import Swal from 'sweetalert2';
+import { ErrorModel } from '../../../../../../core/models/error-model';
 
 @Component({
   selector: 'app-products-table',
@@ -23,25 +24,43 @@ export class ProductsTableComponent {
     this.loadProducts();
   }
 
-  loadProducts(): void {
+  async loadProducts() {
     this.isLoading = true;
-    this.productService
-      .getProducts()
-      .then((newProducts: Product[]) => {
-        this.products = [...this.products, ...newProducts];
-      })
-      .catch((error) => {
-        console.error(error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Ocurrió un error al cargar los productos',
-        });
-      })
-      .finally(() => {
-        this.isLoading = false;
+    const result = await this.productService.getProducts();
+    if ('success' in result && result.success === false) {
+      this.isLoading = false;
+      console.log(result.error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Ocurrió un error al cargar los productos',
       });
+    } else {
+      // this.products = [...this.products, ...result as Product[]];
+      this.products = result as Product[];
+      this.isLoading = false;
+    }
   }
+
+  // loadProducts(): void {
+  //   this.isLoading = true;
+  //   this.productService
+  //     .getProducts()
+  //     .then((newProducts: Product[]) => {
+  //       this.products = [...this.products, ...newProducts];
+  //     })
+  //     .catch((error) => {
+  //       console.error(error);
+  //       Swal.fire({
+  //         icon: 'error',
+  //         title: 'Error',
+  //         text: 'Ocurrió un error al cargar los productos',
+  //       });
+  //     })
+  //     .finally(() => {
+  //       this.isLoading = false;
+  //     });
+  // }
 
   // Eliminar producto
   deleteProductById(id: string): void {
