@@ -152,6 +152,7 @@ export class ProductService {
   async getProductsByPluCode(pluCode: string): Promise<Product[]> {
     const q = query(this.productsCollection, where('plu_code', '==', pluCode));
     const querySnapshot = await getDocs(q);
+    console.log(querySnapshot);
     return this.mapSnapshotToProducts(querySnapshot);
   }
 

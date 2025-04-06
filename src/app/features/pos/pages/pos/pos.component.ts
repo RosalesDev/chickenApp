@@ -53,12 +53,22 @@ export class PosComponent {
   constructor() {
     // Recalcular el subtotal automáticamente cuando cambie la lista de productos
     effect(() => {
-      const total = this.scannedProducts().reduce(
-        (sum, product) =>
-          sum + (product.priceByUnit! + product.priceByKg!) * product.quantity,
-        0
-      );
-      this.subtotal.set(total);
+      const lastProduct = this.scannedProducts().at(-1);
+      if (lastProduct?.amount_to_pay) {
+        const total = this.scannedProducts().reduce(
+          (sum, product) => sum + product.amount_to_pay! * product.quantity,
+          0
+        );
+        this.subtotal.set(total);
+      } else {
+        const total = this.scannedProducts().reduce(
+          (sum, product) =>
+            sum +
+            (product.priceByUnit! + product.priceByKg!) * product.quantity,
+          0
+        );
+        this.subtotal.set(total);
+      }
     });
   }
 
@@ -88,11 +98,23 @@ export class PosComponent {
           this.hideLoadingModal();
         });
     }
-    document.getElementById('barcode-input')?.focus();
+    this.focusBarcodeInput();
+  }
+  focusBarcodeInput(): void {
+    console.log('Enfocando el input de código de barras...');
+    setTimeout(() => {
+      const barcodeInput = document.getElementById(
+        'barcode-input'
+      ) as HTMLInputElement;
+      if (barcodeInput) {
+        barcodeInput.focus(); // Enfoca el input de código de barras
+      }
+    }, 500); // Asegura que el DOM esté listo antes de enfocar
   }
   //TODO: Hacer que la venta se genere despues de que presionen el boton de finalizar venta.
   updateSaleSummary(): void {
-    console.log('Toral enviado desde pos:', this.subtotal());
+    console.log('Total enviado desde pos:', this.subtotal());
+    console.log('Productos enviados desde pos:', this.scannedProducts());
 
     this.currentSaleSummary.set({
       products: this.scannedProducts(),
@@ -134,6 +156,7 @@ export class PosComponent {
         );
         // BUSQUEDA POR PLU
         if (product().length === 0) {
+          inputType = 'PLU';
           const pluCode: string = inputValue.slice(1, 6);
           const existingProduct = this.scannedProducts().find(
             (product) => product.pluCode === pluCode
@@ -146,13 +169,13 @@ export class PosComponent {
               )
             );
             this.hideLoadingModal(); // Oculta el modal
-            return;
           } else {
             const productByPlu = await this.productService.getProductsByPluCode(
               pluCode
             );
+
+            console.log('Producto encontrado por PLU:', productByPlu[0]);
             if (productByPlu.length > 0) {
-              inputType = 'PLU';
               const newProduct = {
                 ...productByPlu[0], // Información del producto
                 quantity: 1, // Inicializa la cantidad en 1
@@ -243,6 +266,11 @@ export class PosComponent {
       modalElement.style.display = 'none'; // Oculta el modal
       document.body.classList.remove('modal-open'); // Restaura el scroll
     }
+  }
+
+  cleanSale(): void {
+    this.scannedProducts.set([]); // Limpia los productos escaneados
+    this.focusBarcodeInput();
   }
 
   finalizeSale(): void {

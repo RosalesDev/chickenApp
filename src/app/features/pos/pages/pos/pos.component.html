@@ -91,6 +91,8 @@
         </div>
       </div>
       <app-sale-summary-modal
+        (cleanSale)="cleanSale()"
+        (focusBarcodeInput)="focusBarcodeInput()"
         [saleSummary]="currentSaleSummary()"
       ></app-sale-summary-modal>
       @if(scannedProducts().length > 0){

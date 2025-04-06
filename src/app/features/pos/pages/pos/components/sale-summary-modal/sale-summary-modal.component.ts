@@ -2,8 +2,9 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   computed,
+  EventEmitter,
   input,
-  Input,
+  Output,
   Signal,
   signal,
   WritableSignal,
@@ -22,6 +23,16 @@ export class SaleSummaryModalComponent {
   //   products: [],
   //   total: 0,
   // };
+  @Output() cleanSale = new EventEmitter<void>();
+  @Output() focusBarcodeInput = new EventEmitter<void>();
+
+  notifyParent() {
+    this.cleanSale.emit();
+  }
+
+  notifyFocusBarcodeInput() {
+    this.focusBarcodeInput.emit();
+  }
 
   saleSummary = input<{ products: any[]; total: number }>({
     products: [],
@@ -48,6 +59,7 @@ export class SaleSummaryModalComponent {
     this.discount.set(0);
     this.payments = [];
     this.paymentSum.set(0);
+    this.notifyFocusBarcodeInput(); // Emitir el evento para enfocar el input de código de barras
   }
 
   setPaymentAmount(event: Event, index: number) {
@@ -66,6 +78,8 @@ export class SaleSummaryModalComponent {
   }
 
   finalizeSale() {
+    this.notifyParent(); // Emitir el evento para limpiar la venta
+    this.resetTotalToPay();
     console.log('Venta finalizada con éxito:', {
       saleSummary: this.saleSummary,
       discount: this.discount,
