@@ -12,6 +12,11 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ModalProductsTableComponent } from './components/modal-products-table/modal-products-table.component';
 
+interface PaymentMethod {
+  type: string;
+  amount: WritableSignal<number>;
+}
+
 @Component({
   selector: 'app-sale-summary-modal',
   imports: [CommonModule, FormsModule, ModalProductsTableComponent],
@@ -40,17 +45,19 @@ export class SaleSummaryModalComponent {
   });
 
   discount = signal(0);
-  payments: { type: string; amount: WritableSignal<number> }[] = [
-    { type: 'cash', amount: signal(0) },
-  ];
-  paymentSum = signal(this.payments.reduce((sum, p) => sum + p.amount(), 0));
+  payments: PaymentMethod[] = [];
+
+  paymentSum = signal(this.payments?.reduce((sum, p) => sum + p.amount(), 0));
   totalToPay: Signal<number> = computed(() => {
     console.log('total dentro del computed: ', this.saleSummary().total);
+
     const discountPercentage =
       (this.saleSummary().total * this.discount()) / 100;
     const totalWithDiscount = this.saleSummary().total - discountPercentage;
+
     return totalWithDiscount - this.paymentSum();
   });
+
   defaultAmountInputValue = 0;
   isDiscountInputFirstFocus = true;
   isPaymentInputFirstFocus = true;
@@ -68,8 +75,18 @@ export class SaleSummaryModalComponent {
     this.paymentSum.set(this.payments.reduce((sum, p) => sum + p.amount(), 0));
   }
 
-  addPayment() {
-    this.payments.push({ type: 'cash', amount: signal(0) });
+  addPayment(payment: PaymentMethod = { type: 'cash', amount: signal(0) }) {
+    this.payments.push(payment);
+  }
+
+  addTotalCashPayment() {
+    this.isPaymentInputFirstFocus = false;
+    let payment: PaymentMethod = {
+      type: 'cash',
+      amount: signal(this.totalToPay()),
+    };
+    this.payments.push(payment);
+    this.paymentSum.set(this.payments.reduce((sum, p) => sum + p.amount(), 0));
   }
 
   removePayment(index: number) {
