@@ -53,22 +53,27 @@ export class PosComponent {
   constructor() {
     // Recalcular el subtotal automáticamente cuando cambie la lista de productos
     effect(() => {
-      const lastProduct = this.scannedProducts().at(-1);
-      if (lastProduct?.amount_to_pay) {
-        const total = this.scannedProducts().reduce(
-          (sum, product) => sum + product.amount_to_pay! * product.quantity,
-          0
-        );
-        this.subtotal.set(total);
-      } else {
-        const total = this.scannedProducts().reduce(
-          (sum, product) =>
-            sum +
-            (product.priceByUnit! + product.priceByKg!) * product.quantity,
-          0
-        );
-        this.subtotal.set(total);
-      }
+      let acumulated: number = 0;
+      this.scannedProducts().forEach((product) => {
+        if (product.amount_to_pay) {
+          acumulated += product.amount_to_pay * product.quantity;
+        } else {
+          if (product.priceType) {
+            acumulated +=
+              product.priceType === 'unit'
+                ? product.priceByUnit! * product.quantity
+                : product.priceByKg! * product.quantity;
+          } else {
+            if (!product.priceByUnit) {
+              acumulated += product?.priceByKg! * product!.quantity;
+            } else {
+              acumulated += product?.priceByUnit! * product!.quantity;
+            }
+          }
+        }
+      });
+      console.log('Subtotal calculado:', acumulated);
+      this.subtotal.set(acumulated);
     });
   }
 
@@ -136,16 +141,17 @@ export class PosComponent {
       this.onSearchByName(inputValue);
       this.hideLoadingModal();
     } else {
-      const existingProduct = this.scannedProducts().find(
+      //Asumo que si un producto se guarda con un código de barras, no se puede guardar con un PLU.
+      const isInProductList = this.scannedProducts().find(
         (product) => product.barcode === inputValue
       );
 
-      if (existingProduct) {
+      if (isInProductList) {
         // Incrementa la cantidad si el producto ya existe en la lista
-        existingProduct.quantity++;
+        isInProductList.quantity++;
         this.scannedProducts.update((products) =>
           products.map((product) =>
-            product.barcode === inputValue ? existingProduct : product
+            product.barcode === inputValue ? isInProductList : product
           )
         );
         this.hideLoadingModal(); // Oculta el modal
@@ -158,14 +164,14 @@ export class PosComponent {
         if (product().length === 0) {
           inputType = 'PLU';
           const pluCode: string = inputValue.slice(1, 6);
-          const existingProduct = this.scannedProducts().find(
+          const isInProductList = this.scannedProducts().find(
             (product) => product.pluCode === pluCode
           );
-          if (existingProduct) {
-            existingProduct.quantity++;
+          if (isInProductList) {
+            isInProductList.quantity++;
             this.scannedProducts.update((products) =>
               products.map((product) =>
-                product.pluCode === pluCode ? existingProduct : product
+                product.pluCode === pluCode ? isInProductList : product
               )
             );
             this.hideLoadingModal(); // Oculta el modal
@@ -191,16 +197,67 @@ export class PosComponent {
             }
           }
         } else {
-          const newProduct = {
-            ...product()[0], // Información del producto
-            quantity: 1, // Inicializa la cantidad en 1
-          };
-          this.scannedProducts.update((products) => [...products, newProduct]);
+          // const newProduct = {
+          //   ...product()[0], // Información del producto
+          //   quantity: 1, // Inicializa la cantidad en 1
+          // };
+          // this.scannedProducts.update((products) => [...products, newProduct]);
+          const foundProduct = product()[0];
+
+          if (foundProduct.priceByUnit && foundProduct.priceByKg) {
+            const priceType = await this.promptPriceTypeSelection(foundProduct);
+
+            if (!priceType) {
+              this.hideLoadingModal(); // Usuario canceló
+              return;
+            }
+
+            const newProduct = {
+              ...foundProduct,
+              quantity: 1,
+              price:
+                priceType === 'unit'
+                  ? foundProduct.priceByUnit
+                  : foundProduct.priceByKg,
+              priceType, // para guardar cuál se eligió
+            };
+            this.scannedProducts.update((products) => [
+              ...products,
+              newProduct,
+            ]);
+          } else {
+            const newProduct = {
+              ...foundProduct,
+              quantity: 1, // Inicializa la cantidad en 1
+            };
+            this.scannedProducts.update((products) => [
+              ...products,
+              newProduct,
+            ]);
+          }
         }
 
         this.hideLoadingModal(); // Oculta el modal
       }
     }
+  }
+
+  async promptPriceTypeSelection(
+    product: any
+  ): Promise<'unit' | 'kilo' | null> {
+    const { value: option } = await Swal.fire({
+      title: 'Seleccioná el tipo de precio',
+      text: `El producto "${product.name}" tiene precio por unidad y por kilo`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Precio por unidad',
+      cancelButtonText: 'Precio por kilo',
+      reverseButtons: true,
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+    });
+
+    return option ? 'unit' : 'kilo';
   }
 
   clearCart(): void {
@@ -209,19 +266,45 @@ export class PosComponent {
   }
   onSearchByName(searchTerm: string) {
     const products = this.productService.allProducts();
-    if (searchTerm.length >= 3 && products) {
+    if (searchTerm.length < 3 && !products) {
+      this.filteredProducts = [];
+    } else {
       this.filteredProducts = products.filter((product: Product) =>
         product.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
       this.showFilteredProducts.set(this.filteredProducts.length > 0);
-    } else {
-      this.filteredProducts = [];
     }
+    // if (searchTerm.length >= 3 && products) {
+    //   this.filteredProducts = products.filter((product: Product) =>
+    //     product.name.toLowerCase().includes(searchTerm.toLowerCase())
+    //   );
+    //   this.showFilteredProducts.set(this.filteredProducts.length > 0);
+    // } else {
+    //   this.filteredProducts = [];
+    // }
   }
 
-  selectProduct(product: Product, input: HTMLInputElement): void {
-    this.selectedProduct = product;
-    console.log('Producto seleccionado:', this.selectedProduct);
+  selectProduct(item: Product, input: HTMLInputElement): void {
+    const isProductInList = this.scannedProducts().find(
+      (product) => item.name === product.name
+    );
+
+    if (isProductInList) {
+      // Incrementa la cantidad si el producto ya existe en la lista
+      isProductInList.quantity++;
+      this.scannedProducts.update((products) =>
+        products.map((product) =>
+          product.name === item.name ? isProductInList : product
+        )
+      );
+      this.hideLoadingModal(); // Oculta el modal
+    } else {
+      const newProduct = {
+        ...item, // Información del producto
+        quantity: 1, // Inicializa la cantidad en 1
+      };
+      this.scannedProducts.update((products) => [...products, newProduct]);
+    }
     this.showFilteredProducts.set(false);
     input.value = '';
   }

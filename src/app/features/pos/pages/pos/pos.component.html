@@ -61,6 +61,14 @@
             <td>{{ product.priceByKg | currency }}</td>
             @if(product.amount_to_pay && product.amount_to_pay > 0){
             <td>{{ product.amount_to_pay | currency }}</td>
+            }@else { @if(product.priceType){
+            <td>
+              {{
+                product.priceType === "unit"
+                  ? (product.priceByUnit! * product.quantity | currency)
+                  : (product.priceByKg! * product.quantity | currency)
+              }}
+            </td>
             }@else {
             <td>
               {{
@@ -69,7 +77,7 @@
                   : (product.priceByKg! * product.quantity | currency)
               }}
             </td>
-            }
+            } }
             <td class="text-center">
               <i
                 [class]="

@@ -10,4 +10,5 @@ export interface Product {
   priceByUnit?: number; // Precio por unidad (opcional, solo si no es por peso)
   quantity: number;
   amount_to_pay?: number;
+  priceType?: string; // Tipo de precio (por unidad o por peso)
 }
