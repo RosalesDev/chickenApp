@@ -7,7 +7,7 @@
       <thead>
         <tr class="text-center">
           <th scope="col">PLU</th>
-          <th scope="col">Código</th>
+          <th scope="col">CÓDIGO</th>
           <th scope="col">INICIALES</th>
           <th scope="col">NOMBRE</th>
           <th scope="col">STOCK</th>
@@ -30,14 +30,13 @@
           <td>${{ product.priceByKg }}</td>
           @if(isAdmin){
           <td>
-            <div class="row justify-content-center">
-              <div class="col-1"></div>
-              <div class="col-2">
+            <div class="row justify-content-evenly d-inline-flex">
+              <div class="col">
                 <button class="btn btn-info btn-sm opacity-75">
                   <i class="bi bi-pencil-square"></i>
                 </button>
               </div>
-              <div class="col-2">
+              <div class="col">
                 <button
                   class="btn btn-danger btn-sm opacity-75"
                   (click)="deleteProductById(product.id!)"
@@ -45,7 +44,6 @@
                   <i class="bi bi-trash3"></i>
                 </button>
               </div>
-              <div class="col-1"></div>
             </div>
           </td>
           }

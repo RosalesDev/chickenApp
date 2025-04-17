@@ -2,13 +2,13 @@
   <div class="card-header">Nueva Venta</div>
   <div class="card-body">
     <!-- ------------------------ BUSCDOR DE PRODUCTOS ------------------------- -->
-    <div class="form-floating position-relative mb-3">
+    <div class="form-floating position-relative mb-3 w-50 mx-auto">
       <input
         id="barcode-input"
         type="text"
         autocomplete="false"
         suggestions="false"
-        class="form-control"
+        class="form-control rounded-4"
         #barcodeInput
         (keyup)="onSearchByName(barcodeInput.value)"
         (keyup.enter)="
@@ -16,7 +16,9 @@
         "
         placeholder="Escanea o ingresa un código"
       />
-      <label for="barcode-input">Escanea o ingresa un código</label>
+      <label for="barcode-input" class="w-50"
+        >Escanea o ingresa un código</label
+      >
       @if(showFilteredProducts()){
       <ul class="list-group position-absolute w-100 shadow">
         @for (product of filteredProducts; track product.id){
@@ -73,7 +75,7 @@
             <td>
               {{
                 product.priceByUnit != 0
-                  ? product.priceByUnit! * product.quantity
+                  ? (product.priceByUnit! * product.quantity | currency)
                   : (product.priceByKg! * product.quantity | currency)
               }}
             </td>

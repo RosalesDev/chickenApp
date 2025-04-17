@@ -307,6 +307,7 @@ export class PosComponent {
     }
     this.showFilteredProducts.set(false);
     input.value = '';
+    this.focusBarcodeInput();
   }
 
   removeProduct(productId: string): void {

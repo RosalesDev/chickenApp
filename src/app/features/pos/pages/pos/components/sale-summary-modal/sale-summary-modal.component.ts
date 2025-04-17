@@ -95,14 +95,13 @@ export class SaleSummaryModalComponent {
   }
 
   finalizeSale() {
-    this.notifyParent(); // Emitir el evento para limpiar la venta
-    this.resetTotalToPay();
     console.log('Venta finalizada con éxito:', {
       saleSummary: this.saleSummary,
       discount: this.discount,
       payments: this.payments,
     });
-    // Aquí puedes emitir un evento o realizar acciones adicionales.
+    this.notifyParent(); // Emitir el evento para limpiar la venta
+    this.resetTotalToPay();
   }
   clearDiscountInput(event: FocusEvent): void {
     if (this.isDiscountInputFirstFocus) {
