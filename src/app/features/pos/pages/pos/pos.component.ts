@@ -1,6 +1,6 @@
 import { Component, effect, inject, signal } from '@angular/core';
 import { ProductService } from '../../services/product.service';
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, UpperCasePipe } from '@angular/common';
 import { Product } from '../../../../core/models/product-model';
 import { trigger, style, animate, transition } from '@angular/animations';
 import { ModalSpinnerComponent } from '../../../../shared/components/modal-spinner/modal-spinner.component';
@@ -10,7 +10,12 @@ import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-pos',
-  imports: [CurrencyPipe, ModalSpinnerComponent, SaleSummaryModalComponent],
+  imports: [
+    CurrencyPipe,
+    UpperCasePipe,
+    ModalSpinnerComponent,
+    SaleSummaryModalComponent,
+  ],
   templateUrl: './pos.component.html',
   styleUrl: './pos.component.css',
   animations: [

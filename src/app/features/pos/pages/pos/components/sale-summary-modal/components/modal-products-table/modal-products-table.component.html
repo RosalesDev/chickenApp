@@ -2,8 +2,8 @@
   <thead>
     <tr class="text-center">
       <th scope="col">Producto</th>
-      <th scope="col">Cantidad</th>
-      <th scope="col">$/unidad</th>
+      <th scope="col">Cant.</th>
+      <th scope="col">$/U</th>
       <th scope="col">$/Kg</th>
       <th scope="col">Total</th>
     </tr>
@@ -11,7 +11,7 @@
   <tbody>
     @for(product of products; track product.id){
     <tr class="text-center">
-      <td>{{ product.name }}</td>
+      <td>{{ product.name | uppercase }}</td>
       <td>{{ product.quantity }}</td>
       <td>${{ product.priceByUnit }}</td>
       <td>${{ product.priceByKg }}</td>

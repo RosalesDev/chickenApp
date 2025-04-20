@@ -3,19 +3,17 @@ import {
   Component,
   computed,
   EventEmitter,
+  inject,
   input,
   Output,
   Signal,
   signal,
-  WritableSignal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ModalProductsTableComponent } from './components/modal-products-table/modal-products-table.component';
-
-interface PaymentMethod {
-  type: string;
-  amount: WritableSignal<number>;
-}
+import Swal from 'sweetalert2';
+import { SaleService } from '../../../../services/sale.service';
+import { PaymentMethod } from '../../../../../../core/models/paymentMethod-model';
 
 @Component({
   selector: 'app-sale-summary-modal',
@@ -30,6 +28,7 @@ export class SaleSummaryModalComponent {
   // };
   @Output() cleanSale = new EventEmitter<void>();
   @Output() focusBarcodeInput = new EventEmitter<void>();
+  private saleService = inject(SaleService); // Inyecta el servicio
 
   notifyParent() {
     this.cleanSale.emit();
@@ -47,7 +46,7 @@ export class SaleSummaryModalComponent {
   discount = signal(0);
   payments: PaymentMethod[] = [];
 
-  paymentSum = signal(this.payments?.reduce((sum, p) => sum + p.amount(), 0));
+  paymentSum = signal(this.payments?.reduce((sum, p) => sum + p.amount, 0));
   totalToPay: Signal<number> = computed(() => {
     console.log('total dentro del computed: ', this.saleSummary().total);
 
@@ -61,6 +60,7 @@ export class SaleSummaryModalComponent {
   defaultAmountInputValue = 0;
   isDiscountInputFirstFocus = true;
   isPaymentInputFirstFocus = true;
+  isLoading = false;
 
   resetTotalToPay() {
     this.discount.set(0);
@@ -71,11 +71,11 @@ export class SaleSummaryModalComponent {
 
   setPaymentAmount(event: Event, index: number) {
     const input = event.target as HTMLInputElement;
-    this.payments[index].amount.set(Number(input.value));
-    this.paymentSum.set(this.payments.reduce((sum, p) => sum + p.amount(), 0));
+    this.payments[index].amount = Number(input.value);
+    this.paymentSum.set(this.payments.reduce((sum, p) => sum + p.amount, 0));
   }
 
-  addPayment(payment: PaymentMethod = { type: 'cash', amount: signal(0) }) {
+  addPayment(payment: PaymentMethod = { type: 'cash', amount: 0 }) {
     this.payments.push(payment);
   }
 
@@ -83,18 +83,73 @@ export class SaleSummaryModalComponent {
     this.isPaymentInputFirstFocus = false;
     let payment: PaymentMethod = {
       type: 'cash',
-      amount: signal(this.totalToPay()),
+      amount: this.totalToPay(),
     };
     this.payments.push(payment);
-    this.paymentSum.set(this.payments.reduce((sum, p) => sum + p.amount(), 0));
+    this.paymentSum.set(this.payments.reduce((sum, p) => sum + p.amount, 0));
   }
 
   removePayment(index: number) {
     this.payments.splice(index, 1);
-    this.paymentSum.set(this.payments.reduce((sum, p) => sum + p.amount(), 0));
+    this.paymentSum.set(this.payments.reduce((sum, p) => sum + p.amount, 0));
   }
 
   finalizeSale() {
+    Swal.fire({
+      title: 'Finalizando venta...',
+      text: 'Por favor, espere un momento.',
+      allowOutsideClick: false,
+      showConfirmButton: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
+    this.saleService
+      .saveSale({
+        balance_after_sale: 0,
+        balance_before_sale: 0,
+        cash_installment: 0,
+        customer_id: '',
+        date_created: null,
+        date_modified: null,
+        customer_name: '',
+        discount: this.discount(),
+        mp_installment: 0,
+        payment_method: this.payments,
+        products_list: this.saleSummary().products,
+        status: 'completed',
+        total: this.saleSummary().total,
+        user_seller: {
+          uid: '',
+          authUserId: '',
+          email: '',
+          userName: '',
+          roles: [],
+          status: '',
+        },
+      })
+      .then(() => {
+        Swal.close();
+        Swal.fire({
+          icon: 'success',
+          title: 'Venta finalizada',
+          text: 'La venta se ha guardado correctamente.',
+          showConfirmButton: true,
+        });
+        this.notifyFocusBarcodeInput(); // Emitir el evento para enfocar el input de código de barras
+      })
+      .catch((error) => {
+        Swal.close();
+        console.error('Error al guardar la venta:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Ocurrió un error al finalizar la venta.',
+        });
+        this.isLoading = false;
+        return;
+      });
+
     console.log('Venta finalizada con éxito:', {
       saleSummary: this.saleSummary,
       discount: this.discount,
@@ -128,7 +183,7 @@ export class SaleSummaryModalComponent {
         this.discount.set(0);
       }
       if (input.id.includes('payment-')) {
-        this.payments[index!].amount.set(this.defaultAmountInputValue);
+        this.payments[index!].amount = this.defaultAmountInputValue;
         this.isPaymentInputFirstFocus = true;
       }
     }

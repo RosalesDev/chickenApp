@@ -52,7 +52,7 @@
         <tbody>
           @for(product of scannedProducts(); track product.id){
           <tr [@fadeOutAnimation] class="text-center">
-            <td>{{ product.name }}</td>
+            <td>{{ product.name | uppercase }}</td>
             <td>
               {{ product.barcode != "" ? product.barcode : product.pluCode }}
             </td>
