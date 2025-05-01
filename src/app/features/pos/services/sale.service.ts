@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import {
-  addDoc,
   collection,
   doc,
   DocumentReference,
@@ -43,7 +42,7 @@ export class SaleService {
           const productSnap = await transaction.get(productRef);
 
           if (!productSnap.exists()) {
-            throw new Error(`Producto con ID ${product.id} no existe`);
+            throw new Error(`Error al buscar el producto en la base de datos`);
           }
 
           const currentAvailability =
@@ -52,7 +51,7 @@ export class SaleService {
 
           if (newAvailability < 0) {
             throw new Error(
-              `Stock insuficiente para el producto con ID ${product.id}`
+              `Stock insuficiente para el producto: ${product.name.toLocaleUpperCase()}`
             );
           }
 
@@ -76,7 +75,8 @@ export class SaleService {
           updatedAt: null,
         });
       });
-      // Guardar la venta
+      // Actualizar los timestamps después de la transacción
+      // Esto es necesario porque los timestamps no se pueden establecer dentro de una transacción
       await updateDoc(saleRef, {
         date_created: serverTimestamp(),
         date_modified: serverTimestamp(),
@@ -92,7 +92,7 @@ export class SaleService {
 
       return {
         success: false,
-        message: 'Ocurrió un error al guardar la venta. Intente nuevamente.',
+        message: error.message || 'Error desconocido al guardar la venta',
       };
     }
   }

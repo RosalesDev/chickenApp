@@ -14,6 +14,7 @@ import { ModalProductsTableComponent } from './components/modal-products-table/m
 import Swal from 'sweetalert2';
 import { SaleService } from '../../../../services/sale.service';
 import { PaymentMethod } from '../../../../../../core/models/paymentMethod-model';
+import { TicketService } from '../../../../services/ticket.service';
 
 @Component({
   selector: 'app-sale-summary-modal',
@@ -28,7 +29,8 @@ export class SaleSummaryModalComponent {
   // };
   @Output() cleanSale = new EventEmitter<void>();
   @Output() focusBarcodeInput = new EventEmitter<void>();
-  private saleService = inject(SaleService); // Inyecta el servicio
+  private saleService = inject(SaleService);
+  private ticketService = inject(TicketService);
 
   notifyParent() {
     this.cleanSale.emit();
@@ -128,27 +130,38 @@ export class SaleSummaryModalComponent {
           status: '',
         },
       })
-      .then(() => {
+      .then((result) => {
         Swal.close();
+        if (!result.success) {
+          console.error('Error al guardar la venta:', result.message);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: `Ocurrió un error al finalizar la venta: ${result.message}`,
+          });
+          this.isLoading = false;
+          return;
+        }
         Swal.fire({
           icon: 'success',
           title: 'Venta finalizada',
           text: 'La venta se ha guardado correctamente.',
           showConfirmButton: true,
         });
+        this.ticketService.printTicket(this.saleSummary().products);
         this.notifyFocusBarcodeInput(); // Emitir el evento para enfocar el input de código de barras
-      })
-      .catch((error) => {
-        Swal.close();
-        console.error('Error al guardar la venta:', error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Ocurrió un error al finalizar la venta.',
-        });
-        this.isLoading = false;
-        return;
       });
+    // .catch((error) => {
+    //   Swal.close();
+    //   console.error('Error al guardar la venta:', error);
+    //   Swal.fire({
+    //     icon: 'error',
+    //     title: 'Error',
+    //     text: 'Ocurrió un error al finalizar la venta.',
+    //   });
+    //   this.isLoading = false;
+    //   return;
+    // });
 
     console.log('Venta finalizada con éxito:', {
       saleSummary: this.saleSummary,
