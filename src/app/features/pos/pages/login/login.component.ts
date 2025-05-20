@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../../core/services/auth.service';
 import { Router } from '@angular/router';
 import { UserService } from '../../../../core/user/user.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-login',
@@ -15,6 +16,7 @@ export class LoginComponent {
   password: string = '';
   errorMessage: string = '';
   isLoading: boolean = false;
+
   // loggedUser = signal<User | null>(null);
 
   constructor(
@@ -32,12 +34,26 @@ export class LoginComponent {
         this.email,
         this.password
       );
-      // console.log('User logged in:', userCredential.user);
-      // this.loggedUser.set(await this.authService.currentUser());
-      // console.log('Current user login successful', this.loggedUser());
-      localStorage.setItem('token', await userCredential.user.getIdToken());
+      const userData = await this.authService.getUserDataFromDB();
+
+      if (!userData || userData['status'] !== 'ACTIVE') {
+        console.log('User is not active');
+        this.router.navigate(['auth/login']);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Usuario inhabilitado',
+          confirmButtonText: 'OK',
+        });
+      }
       this.router.navigate(['/home']);
     } catch (error: any) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Usuario o contraseña incorrectos',
+        confirmButtonText: 'OK',
+      });
       console.error('Login error:', error);
       this.errorMessage = error.message; // Muestra el mensaje de error
     } finally {
