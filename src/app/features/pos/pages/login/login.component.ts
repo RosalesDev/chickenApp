@@ -19,11 +19,7 @@ export class LoginComponent {
 
   // loggedUser = signal<User | null>(null);
 
-  constructor(
-    private authService: AuthService,
-    private userService: UserService,
-    private router: Router
-  ) {}
+  constructor(private authService: AuthService, private router: Router) {}
 
   async login() {
     this.isLoading = true;
@@ -34,7 +30,11 @@ export class LoginComponent {
         this.email,
         this.password
       );
-      const userData = await this.authService.getUserDataFromDB();
+      console.log('user$: ', this.authService.getUser());
+
+      const userData = await this.authService.getUserDataFromDB(
+        userCredential.user.uid
+      );
 
       if (!userData || userData['status'] !== 'ACTIVE') {
         console.log('User is not active');

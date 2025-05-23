@@ -2,13 +2,10 @@ import { Injectable } from '@angular/core';
 import {
   deleteDoc,
   doc,
-  getDoc,
   getFirestore,
   setDoc,
   updateDoc,
   collection,
-  CollectionReference,
-  DocumentData,
   query,
   where,
   limit,
@@ -16,12 +13,15 @@ import {
 } from 'firebase/firestore';
 import { mapToUser } from '../mapper/user-mapper';
 import { User } from '../models/user-model';
+import { BehaviorSubject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
 })
 export class UserService {
   private db = getFirestore(); // Inicializa Firestore
+  private userSubject = new BehaviorSubject<User | null>(null);
+  user$ = this.userSubject.asObservable();
 
   async getUser(uid: string): Promise<User | null> {
     try {
@@ -32,7 +32,8 @@ export class UserService {
       if (!querySnapshot.empty) {
         const doc = querySnapshot.docs[0]; // Tomar el primer documento
         console.log(mapToUser(doc.id, doc.data()));
-        return mapToUser(doc.id, doc.data());
+        this.userSubject.next(mapToUser(doc.id, doc.data()));
+        return this.userSubject.value;
       } else {
         console.log('No document found with the given attribute and value');
         return null;

@@ -1,17 +1,14 @@
 import { inject, Injectable } from '@angular/core';
 import {
-  browserLocalPersistence,
-  //Auth,
   getAuth,
   getIdToken,
   onAuthStateChanged,
-  setPersistence,
   signInWithEmailAndPassword,
   signOut,
   User,
 } from 'firebase/auth';
 import { UserService } from '../user/user.service';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, ReplaySubject } from 'rxjs';
 import { doc, getDoc, getFirestore } from 'firebase/firestore';
 
 @Injectable({
@@ -19,19 +16,27 @@ import { doc, getDoc, getFirestore } from 'firebase/firestore';
 })
 export class AuthService {
   private auth = getAuth();
+  private firestore = getFirestore();
   private userService = inject(UserService);
   private userSubject = new BehaviorSubject<User | null>(null);
   user$ = this.userSubject.asObservable();
-  private firestore = getFirestore();
+  private readySubject = new ReplaySubject<boolean>(1);
+  ready$ = this.readySubject.asObservable();
 
   constructor() {
     onAuthStateChanged(this.auth, async (user) => {
+      console.log('Se ejecuta el onAuthStateChanged');
       if (user) {
+        console.log('Entra al if del onAuthStateChanged', user);
         try {
           const token = await getIdToken(user, true); // Forzamos renovación del ID token
         } catch (error) {
           console.error('Error al renovar token:', error);
         }
+        this.readySubject.next(true);
+      } else {
+        console.log('Entra al else del onAuthStateChanged');
+        this.readySubject.next(false);
       }
       this.userSubject.next(user);
     });
@@ -45,14 +50,12 @@ export class AuthService {
     return this.auth.currentUser;
   }
 
-  async getUserDataFromDB() {
-    const currentUserId = this.getCurrentUser()?.uid;
-    console.log('currentUser: ', currentUserId);
-    if (!currentUserId) {
+  async getUserDataFromDB(uid: string) {
+    if (!uid) {
       console.log('No hay usuario logueado');
       return null;
     }
-    const user = await this.userService.getUser(currentUserId);
+    const user = await this.userService.getUser(uid);
     if (!user) {
       console.log('No existe el usuario en la base de datos');
       return null;
@@ -70,7 +73,9 @@ export class AuthService {
     const user = this.auth.currentUser;
     if (user) {
       try {
-        return await getIdToken(user, true); // fuerza renovación
+        console.log('Renovando token...');
+        const token = await getIdToken(user, true); // fuerza renovación
+        return token;
       } catch {
         return null;
       }
