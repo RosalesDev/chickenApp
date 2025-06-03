@@ -6,7 +6,7 @@ export function mapToUser(id: string, data: any): User {
     authUserId: data.external_id,
     email: data.email,
     userName: data.user_name,
-    roles: data.rol,
+    roles: data.roles || [],
     status: data.status,
   };
 }

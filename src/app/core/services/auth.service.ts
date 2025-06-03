@@ -7,8 +7,9 @@ import {
   signOut,
   User,
 } from 'firebase/auth';
+import { User as UserProfile } from '../models/user-model';
 import { UserService } from '../user/user.service';
-import { BehaviorSubject, Observable, ReplaySubject } from 'rxjs';
+import { BehaviorSubject, Observable, of, ReplaySubject } from 'rxjs';
 import { doc, getDoc, getFirestore } from 'firebase/firestore';
 
 @Injectable({
@@ -21,6 +22,8 @@ export class AuthService {
   private userSubject = new BehaviorSubject<User | null>(null);
   user$ = this.userSubject.asObservable();
   private readySubject = new ReplaySubject<boolean>(1);
+  userProfile$: Observable<UserProfile | null> = of(null);
+
   ready$ = this.readySubject.asObservable();
 
   constructor() {
@@ -29,6 +32,7 @@ export class AuthService {
       if (user) {
         console.log('Entra al if del onAuthStateChanged', user);
         try {
+          this.userProfile$ = this.userService.getUserProfile(user.uid);
           const token = await getIdToken(user, true); // Forzamos renovación del ID token
         } catch (error) {
           console.error('Error al renovar token:', error);
@@ -36,10 +40,12 @@ export class AuthService {
         this.readySubject.next(true);
       } else {
         console.log('Entra al else del onAuthStateChanged');
+        this.userProfile$ = of(null);
         this.readySubject.next(false);
       }
       this.userSubject.next(user);
     });
+
 
     // setPersistence(this.auth, browserLocalPersistence).catch((error) => {
     //   console.error('Error configurando la persistencia:', error);
