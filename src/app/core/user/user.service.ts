@@ -16,7 +16,7 @@ import {
 } from 'firebase/firestore';
 import { mapToUser } from '../mapper/user-mapper';
 import { User } from '../models/user-model';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, from, map, Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -47,6 +47,42 @@ export class UserService {
 
     return null;
   }
+  /**
+   * Obtiene un usuario de la colección 'users' donde el campo 'external_id'
+   * coincide con el UID proporcionado.
+   * @param uid El UID a buscar en el campo 'external_id'.
+   * @returns Un Observable que emite el UserProfile o null si no se encuentra.
+   */
+  getUserProfileByExternalId(uid: string): Observable<User | null> {
+    if (!uid) {
+      return new Observable((subscriber) => {
+        subscriber.next(null);
+        subscriber.complete();
+      });
+    }
+    const usersCollectionRef = collection(this.db, 'users');
+
+    // Construimos la consulta:
+    // 1. Apunta a la colección 'users'.
+    // 2. Aplica un filtro 'where' donde el campo 'external_id' sea igual al 'uid' dado.
+    const q = query(usersCollectionRef, where('external_id', '==', uid));
+
+    // Ejecutamos la consulta y manejamos los resultados
+    return from(getDocs(q)).pipe(
+      map((querySnapshot) => {
+        if (!querySnapshot.empty) {
+          // Si hay resultados, tomamos el primer documento
+          const docData = querySnapshot.docs[0].data() as User;
+          // Opcional: puedes añadir el ID del documento si lo necesitas
+          // docData.id = querySnapshot.docs[0].id;
+          return docData;
+        } else {
+          console.log(`No se encontró ningún usuario con external_id: ${uid}`);
+          return null; // No se encontró ningún documento
+        }
+      })
+    );
+  }
 
   /**
    * Obtiene el perfil de usuario de Firestore por UID en tiempo real usando onSnapshot.
@@ -63,6 +99,7 @@ export class UserService {
     }
 
     const userDocRef = doc(this.db, `users/${uid}`);
+    console.log('userDocRef:', userDocRef);
 
     // onSnapshot devuelve una función para desuscribirse
     return new Observable<User | null>((subscriber) => {

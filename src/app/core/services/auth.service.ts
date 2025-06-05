@@ -9,7 +9,13 @@ import {
 } from 'firebase/auth';
 import { User as UserProfile } from '../models/user-model';
 import { UserService } from '../user/user.service';
-import { BehaviorSubject, Observable, of, ReplaySubject } from 'rxjs';
+import {
+  BehaviorSubject,
+  Observable,
+  of,
+  ReplaySubject,
+  Subscription,
+} from 'rxjs';
 import { doc, getDoc, getFirestore } from 'firebase/firestore';
 
 @Injectable({
@@ -23,6 +29,7 @@ export class AuthService {
   user$ = this.userSubject.asObservable();
   private readySubject = new ReplaySubject<boolean>(1);
   userProfile$: Observable<UserProfile | null> = of(null);
+  private userProfileSubscription: Subscription | null = null;
 
   ready$ = this.readySubject.asObservable();
 
@@ -32,7 +39,9 @@ export class AuthService {
       if (user) {
         console.log('Entra al if del onAuthStateChanged', user);
         try {
-          this.userProfile$ = this.userService.getUserProfile(user.uid);
+          this.userProfile$ = this.userService.getUserProfileByExternalId(
+            user.uid
+          );
           const token = await getIdToken(user, true); // Forzamos renovación del ID token
         } catch (error) {
           console.error('Error al renovar token:', error);
@@ -44,12 +53,17 @@ export class AuthService {
         this.readySubject.next(false);
       }
       this.userSubject.next(user);
+
+      this.userProfileSubscription = this.userProfile$.subscribe(
+        (profile: UserProfile | null) => {
+          console.log('auth.service.ts >> userProfile$::', profile);
+        }
+      );
+
+      // setPersistence(this.auth, browserLocalPersistence).catch((error) => {
+      //   console.error('Error configurando la persistencia:', error);
+      // });
     });
-
-
-    // setPersistence(this.auth, browserLocalPersistence).catch((error) => {
-    //   console.error('Error configurando la persistencia:', error);
-    // });
   }
 
   getCurrentUser(): User | null {
@@ -105,6 +119,13 @@ export class AuthService {
 
   isLoggedIn(): boolean {
     return this.userSubject.value !== null;
+  }
+
+  onDestroy() {
+    if (this.userProfileSubscription) {
+      this.userProfileSubscription.unsubscribe();
+      this.userProfileSubscription = null;
+    }
   }
 
   // async currentUser(): Promise<User | null> {

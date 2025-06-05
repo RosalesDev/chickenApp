@@ -30,7 +30,10 @@ export class LoginComponent {
         this.email,
         this.password
       );
-      console.log('user$: ', this.authService.getUser());
+      console.log(
+        'login.component >> usuario logueado:',
+        this.authService.getUser()
+      );
 
       const userData = await this.authService.getUserDataFromDB(
         userCredential.user.uid
