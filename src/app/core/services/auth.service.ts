@@ -11,10 +11,13 @@ import { User as UserProfile } from '../models/user-model';
 import { UserService } from '../user/user.service';
 import {
   BehaviorSubject,
+  distinctUntilChanged,
+  map,
   Observable,
   of,
   ReplaySubject,
   Subscription,
+  switchMap,
 } from 'rxjs';
 import { doc, getDoc, getFirestore } from 'firebase/firestore';
 
@@ -26,14 +29,37 @@ export class AuthService {
   private firestore = getFirestore();
   private userService = inject(UserService);
   private userSubject = new BehaviorSubject<User | null>(null);
-  user$ = this.userSubject.asObservable();
   private readySubject = new ReplaySubject<boolean>(1);
+  user$ = this.userSubject.asObservable();
   userProfile$: Observable<UserProfile | null> = of(null);
+  userRoles$: Observable<string[]> = of([]);
   private userProfileSubscription: Subscription | null = null;
 
   ready$ = this.readySubject.asObservable();
 
   constructor() {
+    this.userProfile$ = this.user$.pipe(
+      switchMap((user) => {
+        if (user) {
+          return this.userService.getUserProfileByExternalId(user.uid);
+        }
+        return of(null);
+      }),
+      // Aseguramos que solo emitamos cuando el perfil cambie
+      distinctUntilChanged(
+        (prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)
+      )
+    );
+
+    // Mapeamos el userProfile$ a userRoles$
+    this.userRoles$ = this.userProfile$.pipe(
+      map((userProfile) => userProfile?.roles || []),
+      distinctUntilChanged(
+        (prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)
+      ) // Para evitar re-emisiones innecesarias
+    );
+
+    // Escuchamos los cambios de autenticación
     onAuthStateChanged(this.auth, async (user) => {
       console.log('Se ejecuta el onAuthStateChanged');
       if (user) {
@@ -54,16 +80,28 @@ export class AuthService {
       }
       this.userSubject.next(user);
 
-      this.userProfileSubscription = this.userProfile$.subscribe(
-        (profile: UserProfile | null) => {
-          console.log('auth.service.ts >> userProfile$::', profile);
-        }
-      );
-
       // setPersistence(this.auth, browserLocalPersistence).catch((error) => {
       //   console.error('Error configurando la persistencia:', error);
       // });
     });
+  }
+
+  /**
+   * Verifica si el usuario actual tiene alguno de los roles especificados.
+   * @param requiredRoles Array de roles requeridos.
+   * @returns Observable<boolean> que emite true si el usuario tiene al menos uno de los roles, false en caso contrario.
+   */
+  hasAnyRole(requiredRoles: string[]): Observable<boolean> {
+    return this.userRoles$.pipe(
+      map((userRoles) => {
+        if (!userRoles || userRoles.length === 0) {
+          return false; // El usuario no tiene roles asignados
+        }
+        // Verifica si hay al menos un rol común entre los roles del usuario y los roles requeridos
+        return requiredRoles.some((role) => userRoles.includes(role));
+      }),
+      distinctUntilChanged() // Para evitar re-emisiones si el resultado no cambia
+    );
   }
 
   getCurrentUser(): User | null {

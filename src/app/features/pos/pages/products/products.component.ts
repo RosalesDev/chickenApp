@@ -5,10 +5,11 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ProductsTableComponent } from './components/products-table/products-table.component';
 import Swal from 'sweetalert2';
+import { HasRoleDirective } from '../../../../shared/directives/has-role.directive';
 
 @Component({
   selector: 'app-products',
-  imports: [RouterLink, ProductsTableComponent],
+  imports: [RouterLink, ProductsTableComponent, HasRoleDirective],
   templateUrl: './products.component.html',
   styleUrl: './products.component.css',
 })

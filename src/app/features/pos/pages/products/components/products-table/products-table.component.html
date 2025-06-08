@@ -13,9 +13,7 @@
           <th scope="col">STOCK</th>
           <th scope="col">PRECIO POR UNIDAD</th>
           <th scope="col">PRECIO POR KG</th>
-          @if (isAdmin) {
-          <th scope="col">ACCIONES</th>
-          }
+          <th *hasRole="'ADMIN'" scope="col">ACCIONES</th>
         </tr>
       </thead>
       <tbody>
@@ -28,8 +26,7 @@
           <td>{{ product.availabilityInDeposit }}</td>
           <td>${{ product.priceByUnit }}</td>
           <td>${{ product.priceByKg }}</td>
-          @if(isAdmin){
-          <td>
+          <td *hasRole="'ADMIN'">
             <div class="row gx-0">
               <div class="col">
                 <button class="btn btn-info btn-sm opacity-75">
@@ -46,7 +43,6 @@
               </div>
             </div>
           </td>
-          }
         </tr>
         }
       </tbody>

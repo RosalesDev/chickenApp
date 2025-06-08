@@ -1,9 +1,17 @@
-import { Component, OnInit } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../../core/services/auth.service';
 import { Router } from '@angular/router';
 import { UserService } from '../../../../core/user/user.service';
 import Swal from 'sweetalert2';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -11,15 +19,27 @@ import Swal from 'sweetalert2';
   templateUrl: './login.component.html',
   styleUrl: './login.component.css',
 })
-export class LoginComponent {
+export class LoginComponent implements AfterViewInit, OnDestroy {
+  @ViewChild('emailInput') emailInputRef!: ElementRef;
+
   email: string = '';
   password: string = '';
   errorMessage: string = '';
   isLoading: boolean = false;
+  private destroy$ = new Subject<void>(); // Un Subject para manejar la desuscripción
 
   // loggedUser = signal<User | null>(null);
 
   constructor(private authService: AuthService, private router: Router) {}
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+  ngAfterViewInit(): void {
+    setTimeout(() => {
+      this.emailInputRef.nativeElement.focus();
+    });
+  }
 
   async login() {
     this.isLoading = true;
@@ -49,7 +69,16 @@ export class LoginComponent {
           confirmButtonText: 'OK',
         });
       }
-      this.router.navigate(['/home']);
+      this.authService
+        .hasAnyRole(['ADMIN'])
+        .pipe(takeUntil(this.destroy$)) // Importante: desuscribirse cuando el componente se destruye
+        .subscribe((isAdmin) => {
+          if (isAdmin) {
+            this.router.navigate(['/home']);
+          } else {
+            this.router.navigate(['/home/pos']);
+          }
+        });
     } catch (error: any) {
       Swal.fire({
         icon: 'error',

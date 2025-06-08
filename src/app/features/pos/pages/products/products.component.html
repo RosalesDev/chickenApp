@@ -5,6 +5,7 @@
         <div class="col">
           <!-- Botón para abrir el formulario de creación de productos -->
           <button
+            *hasRole="'ADMIN'"
             type="button"
             class="btn btn-primary"
             routerLink="/home/create-product"

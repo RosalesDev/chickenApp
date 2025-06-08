@@ -3,7 +3,7 @@ export class User {
   authUserId: string;
   email: string;
   userName: string;
-  roles: Role[];
+  roles: string[];
   status: string;
 
   constructor(
@@ -11,7 +11,7 @@ export class User {
     authUserId: string = '',
     email: string = '',
     userName: string = '',
-    roles: Role[] = [],
+    roles: string[] = [],
     status: string = 'active'
   ) {
     this.uid = uid;

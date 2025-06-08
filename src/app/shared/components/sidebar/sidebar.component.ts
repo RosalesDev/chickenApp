@@ -3,10 +3,17 @@ import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
+import { HasRoleDirective } from '../../directives/has-role.directive';
 
 @Component({
   selector: 'app-sidebar',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    CommonModule,
+    HasRoleDirective,
+  ],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.css',
 })

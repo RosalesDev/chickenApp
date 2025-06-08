@@ -84,47 +84,6 @@ export class UserService {
     );
   }
 
-  /**
-   * Obtiene el perfil de usuario de Firestore por UID en tiempo real usando onSnapshot.
-   * Emite cada vez que el documento cambia en Firestore.
-   * @param uid El UID del usuario.
-   * @returns Un Observable del perfil de usuario o null si no existe.
-   */
-  getUserProfile(uid: string): Observable<User | null> {
-    if (!uid) {
-      return new Observable((subscriber) => {
-        subscriber.next(null);
-        subscriber.complete();
-      });
-    }
-
-    const userDocRef = doc(this.db, `users/${uid}`);
-    console.log('userDocRef:', userDocRef);
-
-    // onSnapshot devuelve una función para desuscribirse
-    return new Observable<User | null>((subscriber) => {
-      const unsubscribe = onSnapshot(
-        userDocRef,
-        (snapshot: DocumentSnapshot<DocumentData>) => {
-          if (snapshot.exists()) {
-            subscriber.next({
-              uid: snapshot.id,
-              ...(snapshot.data() as Omit<User, 'uid'>),
-            });
-          } else {
-            subscriber.next(null);
-          }
-        },
-        (error) => {
-          subscriber.error(error);
-        }
-      );
-
-      // La función de retorno de un Observable es lo que se ejecuta cuando el Observable se desuscribe
-      return () => unsubscribe();
-    });
-  }
-
   async createUser(uid: string, user: User): Promise<void> {
     const userDoc = doc(this.db, 'users', uid);
     await setDoc(userDoc, user);

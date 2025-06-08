@@ -3,10 +3,11 @@ import { Product } from '../../../../../../core/models/product-model';
 import { ProductService } from '../../../../services/product.service';
 import Swal from 'sweetalert2';
 import { ErrorModel } from '../../../../../../core/models/error-model';
+import { HasRoleDirective } from '../../../../../../shared/directives/has-role.directive';
 
 @Component({
   selector: 'app-products-table',
-  imports: [],
+  imports: [HasRoleDirective],
   templateUrl: './products-table.component.html',
   styleUrl: './products-table.component.css',
 })
