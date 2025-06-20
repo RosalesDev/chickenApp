@@ -97,9 +97,19 @@
             </a>
           </li>
           <li *hasRole="'ADMIN'">
-            <a class="nav-link text-white" routerLink="/under-construction">
+            <a
+              class="nav-link text-white"
+              routerLink="/under-construction"
+              routerLinkActive="active"
+            >
               <i class="fs-4 bi-people"></i>
               <span class="ms-1 d-none d-sm-inline">Clientes</span>
+            </a>
+          </li>
+          <li *hasRole="'ADMIN'">
+            <a class="nav-link text-white" routerLink="/home/sales">
+              <i class="fs-4 bi-people"></i>
+              <span class="ms-1 d-none d-sm-inline">Ventas</span>
             </a>
           </li>
         </ul>

@@ -56,6 +56,16 @@ export const routes: Routes = [
           ).then((m) => m.CreateProductFormComponent),
         // component: CreateProductFormComponent,
       },
+      {
+        path: 'sales',
+        title: 'Ventas',
+        canActivate: [authRoleGuard],
+        data: { roles: ['ADMIN'] },
+        loadComponent: () =>
+          import('./features/pos/pages/sales/sales.component').then(
+            (m) => m.SalesComponent
+          ),
+      },
     ],
   },
 ];

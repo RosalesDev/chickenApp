@@ -19,3 +19,11 @@ export interface SaleDto {
   total: number;
   user_seller: User;
 }
+
+export interface SalesFilters {
+  startDate?: Date;
+  endDate?: Date;
+  vendedorId?: string;
+  // Puedes agregar cualquier otro filtro que necesites en el futuro
+  // por ejemplo: estado?: 'completada' | 'pendiente';
+}

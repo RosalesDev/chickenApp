@@ -1,0 +1,71 @@
+// Importar variables de Bootstrap para consistencia, si es necesario
+// @import "bootstrap/scss/functions";
+// @import "bootstrap/scss/variables";
+
+// Estilo de tarjetas con animación y sombra tipo Material
+.card.shadow-hover {
+  border: none;
+  transition: box-shadow 0.3s ease-in-out, transform 0.3s ease-in-out;
+  cursor: pointer;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15) !important;
+  }
+}
+
+// Animación para la aparición de las tarjetas
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animated-card {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+// Estilo para el estado vacío (marca de agua)
+.empty-state {
+  padding: 4rem 1rem;
+  .empty-state-img {
+    max-width: 250px;
+    opacity: 0.5;
+  }
+}
+
+// Estilo para el botón flotante (FAB)
+.fab {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  z-index: 1050; // Para que esté sobre otros elementos
+}
+
+// Pequeños ajustes al diseño de filtros
+.filter-card {
+  border: none;
+  background-color: #f8f9fa;
+}
+
+// Ajustes al modal para un look más limpio
+.modal-header {
+  border-bottom: 1px solid #dee2e6;
+}
+
+.modal-content {
+  border: none;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
