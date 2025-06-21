@@ -4,6 +4,7 @@ import { HomeComponent } from './features/pos/pages/home/home.component';
 import { PosComponent } from './features/pos/pages/pos/pos.component';
 import { UnderconstructionpageComponent } from './shared/underconstructionpage/underconstructionpage.component';
 import { authRoleGuard } from './core/guards/auth-role.guard';
+import { SalesComponent } from './features/pos/pages/sales/sales.component';
 
 export const routes: Routes = [
   {
@@ -61,10 +62,7 @@ export const routes: Routes = [
         title: 'Ventas',
         canActivate: [authRoleGuard],
         data: { roles: ['ADMIN'] },
-        loadComponent: () =>
-          import('./features/pos/pages/sales/sales.component').then(
-            (m) => m.SalesComponent
-          ),
+        component: SalesComponent,
       },
     ],
   },

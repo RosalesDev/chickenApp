@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router, ActivatedRouteSnapshot } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { map, take } from 'rxjs';
+import { filter, first, map, of, switchMap } from 'rxjs';
 
 export const authRoleGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   const authService = inject(AuthService);
@@ -18,19 +18,29 @@ export const authRoleGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
     return true;
   }
 
-  return authService.hasAnyRole(requiredRoles).pipe(
-    take(1), // Tomar solo la primera emisión y completar
+  return authService.ready$.pipe(
+    // 1. Filtra para solo reaccionar cuando ready$ sea `true`.
+    //    Esto evita cualquier estado intermedio.
+    filter((ready) => ready),
+
+    // 2. Toma solo la primera señal de `true` para no volver a ejecutar esto en la misma sesión.
+    first(),
+
+    // 3. Ahora que estamos seguros de que todo está cargado, nos cambiamos
+    //    al observable que verifica los roles.
+    switchMap(() => authService.hasAnyRole(requiredRoles)),
+
+    // 4. Mapeamos el resultado final a la decisión del guard.
     map((hasPermission) => {
       if (hasPermission) {
         return true;
-      } else {
-        // Redirigir al usuario a una página de no autorizado o al inicio
-        console.warn(
-          'Acceso denegado: El usuario no tiene los roles requeridos.'
-        );
-        router.navigate(['/login']);
-        return false;
       }
+
+      console.warn(
+        'Acceso denegado: El usuario no tiene los roles requeridos.'
+      );
+      router.navigate(['/login']);
+      return false;
     })
   );
 };

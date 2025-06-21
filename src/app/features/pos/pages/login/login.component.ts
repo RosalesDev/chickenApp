@@ -88,8 +88,7 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
       });
       console.error('Login error:', error);
       this.errorMessage = error.message; // Muestra el mensaje de error
-    } finally {
-      this.isLoading = false;
+      this.isLoading = false; // Asegúrate de desactivar el loading en caso de error
     }
   }
 }

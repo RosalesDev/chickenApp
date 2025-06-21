@@ -12,6 +12,7 @@ import { UserService } from '../user/user.service';
 import {
   BehaviorSubject,
   distinctUntilChanged,
+  firstValueFrom,
   map,
   Observable,
   of,
@@ -61,24 +62,55 @@ export class AuthService {
 
     // Escuchamos los cambios de autenticación
     onAuthStateChanged(this.auth, async (user) => {
-      console.log('Se ejecuta el onAuthStateChanged');
       if (user) {
-        console.log('Entra al if del onAuthStateChanged', user);
+        // 1. Tenemos usuario de Firebase, pero NO estamos listos todavía.
+        // Primero, actualizamos el userSubject para que userProfile$ se dispare.
+        this.userSubject.next(user);
+
         try {
-          this.userProfile$ = this.userService.getUserProfileByExternalId(
-            user.uid
+          // 2. Esperamos a que la carga del perfil desde Firestore TERMINE.
+          // `firstValueFrom` convierte el observable en una promesa y espera su primer valor.
+          await firstValueFrom(this.userProfile$);
+          console.log(
+            'AuthService: Perfil de usuario cargado desde Firestore.'
           );
-          const token = await getIdToken(user, true); // Forzamos renovación del ID token
+
+          // 3. AHORA SÍ. Todo está cargado. Emitimos la señal "ready".
+          this.readySubject.next(true);
+          console.log('AuthService: Estado listo (ready).');
         } catch (error) {
-          console.error('Error al renovar token:', error);
+          console.error(
+            'Error al cargar el perfil de usuario desde Firestore:',
+            error
+          );
+          // Si falla la carga del perfil, lo mejor es desloguear al usuario.
+          await this.logout();
+          this.readySubject.next(true); // Estamos "listos", pero en estado "no logueado".
         }
-        this.readySubject.next(true);
       } else {
-        console.log('Entra al else del onAuthStateChanged');
-        this.userProfile$ = of(null);
-        this.readySubject.next(false);
+        // Si no hay usuario, el estado es claro y definitivo.
+        this.userSubject.next(null);
+        this.readySubject.next(true); // Estamos "listos" y en estado "no logueado".
+        console.log('AuthService: No hay usuario. Estado listo (ready).');
       }
-      this.userSubject.next(user);
+      // console.log('Se ejecuta el onAuthStateChanged');
+      // if (user) {
+      //   console.log('Entra al if del onAuthStateChanged', user);
+      //   try {
+      //     this.userProfile$ = this.userService.getUserProfileByExternalId(
+      //       user.uid
+      //     );
+      //     const token = await getIdToken(user, true); // Forzamos renovación del ID token
+      //   } catch (error) {
+      //     console.error('Error al renovar token:', error);
+      //   }
+      //   this.readySubject.next(true);
+      // } else {
+      //   console.log('Entra al else del onAuthStateChanged');
+      //   this.userProfile$ = of(null);
+      //   this.readySubject.next(false);
+      // }
+      // this.userSubject.next(user);
 
       // setPersistence(this.auth, browserLocalPersistence).catch((error) => {
       //   console.error('Error configurando la persistencia:', error);
