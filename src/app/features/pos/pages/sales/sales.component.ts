@@ -100,6 +100,8 @@ export class SalesComponent implements OnInit {
               // Actualizamos los cursores para la próxima paginación
               this.firstVisible = result.firstVisible;
               this.lastVisible = result.lastVisible;
+              console.log('firstVisible:', this.firstVisible);
+              console.log('lastVisible:', this.lastVisible);
 
               // Devolvemos el objeto completo que la vista necesita
               return {
