@@ -11,4 +11,5 @@ export interface Product {
   quantity: number;
   amount_to_pay?: number;
   priceType?: string; // Tipo de precio (por unidad o por peso)
+  is_local?: boolean; // Indica si el producto es local (no visible en la app)
 }

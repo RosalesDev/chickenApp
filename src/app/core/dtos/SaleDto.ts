@@ -18,6 +18,7 @@ export interface SaleDto {
   status: string;
   total: number;
   user_seller: User;
+  is_local_sale: boolean;
 }
 
 export interface SalesFilters {

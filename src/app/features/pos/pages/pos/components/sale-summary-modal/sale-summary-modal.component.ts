@@ -129,6 +129,7 @@ export class SaleSummaryModalComponent {
           roles: [],
           status: '',
         },
+        is_local_sale: true,
       })
       .then((result) => {
         Swal.close();

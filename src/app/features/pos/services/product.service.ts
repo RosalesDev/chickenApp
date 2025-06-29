@@ -178,6 +178,7 @@ export class ProductService {
       priceByKg: form.get('price_by_kg')?.value,
       isWeighed: form.get('is_weighed')?.value,
       quantity: 0,
+      is_local: !form.get('is_visible_in_app')?.value,
     };
   }
 }

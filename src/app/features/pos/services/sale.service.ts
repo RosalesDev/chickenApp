@@ -22,7 +22,6 @@ import {
 } from 'firebase/firestore';
 import { SaleDto, SalesFilters } from '../../../core/dtos/SaleDto';
 import { from, map, Observable } from 'rxjs';
-import { Sale } from '../../../core/models/sale-model';
 
 export interface PaginatedSalesResult {
   sales: SaleDto[];
@@ -39,7 +38,7 @@ export class SaleService {
   private firestore = getFirestore();
   private salesCollection = collection(this.firestore, 'sales');
   private productsCollection = collection(this.firestore, 'products');
-  private readonly PAGE_SIZE = 12; // Define el tamaño de la página aquí
+  readonly PAGE_SIZE = 5; // Define el tamaño de la página aquí
 
   /* -------------------------------------------------------------------------- */
   /*                    OBTENER VENTAS PAGINADAS Y FILTRADAS                    */
@@ -110,6 +109,7 @@ export class SaleService {
             status: data['status'] || 'unknown',
             total: data['total'] || 0,
             user_seller: data['user_seller'] || null, // Asegúrate que el tipo User coincida
+            is_local_sale: data['is_local_sale'] || false, // Asegúrate que el tipo booleano coincida
           };
           // ---- FIN DEL MAPEO ----
 
@@ -137,6 +137,7 @@ export class SaleService {
     let q: Query<DocumentData> = query(this.salesCollection);
 
     // Siempre ordenar por fecha para que los filtros de rango y paginación funcionen
+    q = query(q, where('is_local_sale', '==', true));
     q = query(q, orderBy('date_created', sortOrder));
 
     if (filters.startDate) {
@@ -207,6 +208,7 @@ export class SaleService {
           ...sale,
           createdAt: null,
           updatedAt: null,
+          is_local_sale: true,
         });
       });
       // Actualizar los timestamps después de la transacción

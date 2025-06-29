@@ -10,4 +10,5 @@ export interface ProductDTO {
   name: string; // Nombre del producto
   price_by_kg?: number; // Precio por kilogramo (opcional, solo si es por peso)
   price_by_unit?: number; // Precio por unidad (opcional, solo si no es por peso)
+  is_local?: boolean; // Indica si el producto es local (no visible en la app)
 }

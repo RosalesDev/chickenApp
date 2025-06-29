@@ -39,6 +39,7 @@ export class CreateProductFormComponent {
       pluCode: ['', [Validators.required, Validators.pattern(/^[0-9]{5}$/)]],
       initials: ['', [Validators.required]],
       is_weighed: [false, [Validators.required]],
+      is_visible_in_app: [false, [Validators.required]],
       name: ['', [Validators.required]],
       availability_in_deposit: [
         '',

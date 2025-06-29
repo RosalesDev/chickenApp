@@ -5,12 +5,11 @@ import {
   signal,
   WritableSignal,
 } from '@angular/core';
-import { PaginatedSalesResult, SaleService } from '../../services/sale.service';
+import { SaleService } from '../../services/sale.service';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import {
   BehaviorSubject,
   catchError,
-  first,
   map,
   Observable,
   of,
@@ -110,7 +109,7 @@ export class SalesComponent implements OnInit {
                   isFirstPage:
                     pagination.direction === 'initial' ||
                     pagination.cursor === null,
-                  isLastPage: result.sales.length < 12, // Asumiendo PAGE_SIZE = 12
+                  isLastPage: result.sales.length < this.salesService.PAGE_SIZE, // Asumiendo PAGE_SIZE = 12
                 },
                 isLoading: false,
                 totalItems: result.sales.length,

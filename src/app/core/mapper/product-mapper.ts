@@ -26,5 +26,6 @@ export function mapToProductDto(product: Product): ProductDTO {
     name: product.name,
     price_by_kg: Number(product.priceByKg) || 0,
     price_by_unit: Number(product.priceByUnit) || 0,
+    is_local: product.is_local || false,
   };
 }
