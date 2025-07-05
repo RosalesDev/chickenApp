@@ -5,7 +5,7 @@ import {
   DocumentData,
   DocumentReference,
   DocumentSnapshot,
-  endBefore,
+  endAt,
   getDocs,
   getFirestore,
   limit,
@@ -58,7 +58,7 @@ export class SaleService {
   ): Observable<PaginatedSalesResult> {
     // 1. Construye la consulta base con los filtros, igual que antes.
     let q = this.buildFilteredQuery(filters);
-    // let q2 = this.buildFilteredQuery(filters);
+    console.log('direction:', direction);
 
     // 2. Aplica la lógica de paginación
     switch (direction) {
@@ -70,7 +70,7 @@ export class SaleService {
         // Nota: la paginación hacia atrás en Firestore es más compleja.
         // Este es un enfoque común.
         const prevQuery = this.buildFilteredQuery(filters, 'asc');
-        q = query(prevQuery, endBefore(cursor), limitToLast(this.PAGE_SIZE));
+        q = query(prevQuery, endAt(cursor), limitToLast(this.PAGE_SIZE));
         break;
       default: // initial
         q = query(q, limit(this.PAGE_SIZE));
@@ -82,6 +82,8 @@ export class SaleService {
       map((snapshot) => {
         const salesDocs =
           direction === 'prev' ? snapshot.docs.reverse() : snapshot.docs;
+
+        // const salesDocs = snapshot.docs;
 
         const sales = salesDocs.map((doc) => {
           const data = doc.data();
@@ -119,8 +121,8 @@ export class SaleService {
 
         return {
           sales,
-          lastVisible: snapshot.docs[snapshot.docs.length - 1] ?? null,
-          firstVisible: snapshot.docs[0] ?? null,
+          lastVisible: salesDocs[snapshot.docs.length - 1] ?? null,
+          firstVisible: salesDocs[0] ?? null,
         };
       })
     );

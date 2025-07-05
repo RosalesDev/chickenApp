@@ -51,6 +51,8 @@ export class SalesComponent implements OnInit {
     cursor: DocumentSnapshot<DocumentData> | null;
   }>({ direction: 'initial', cursor: null });
 
+  private cursorStack: any[] = [];
+
   // --- (NUEVO) ÚNICO STREAM PARA LA VISTA: vm$ ---
   public vm$!: Observable<SalesViewModel>;
 
@@ -84,6 +86,11 @@ export class SalesComponent implements OnInit {
       ),
       switchMap(({ filters, pagination }) => {
         // En lugar de un BehaviorSubject, el estado de carga se maneja dentro del stream
+        console.log(
+          'Se ejecuta el switchMap con filtros y paginacion:',
+          filters,
+          pagination
+        );
         const initialLoadingState: SalesViewModel = {
           sales: [],
           pagination: { isFirstPage: true, isLastPage: false },
@@ -99,8 +106,14 @@ export class SalesComponent implements OnInit {
               // Actualizamos los cursores para la próxima paginación
               this.firstVisible = result.firstVisible;
               this.lastVisible = result.lastVisible;
-              console.log('firstVisible:', this.firstVisible);
-              console.log('lastVisible:', this.lastVisible);
+              this.vm$.subscribe({
+                next: (v) => console.log('Valor de vm$:', v),
+                error: (err) => console.error('Error en vm$:', err),
+                complete: () => console.log('vm$ completado'),
+              });
+              console.log(this.cursorStack[0]);
+              console.log('firstVisible:', this.firstVisible?.data()!['total']);
+              console.log('lastVisible:', this.lastVisible?.data()!['total']);
 
               // Devolvemos el objeto completo que la vista necesita
               return {
@@ -108,8 +121,9 @@ export class SalesComponent implements OnInit {
                 pagination: {
                   isFirstPage:
                     pagination.direction === 'initial' ||
-                    pagination.cursor === null,
-                  isLastPage: result.sales.length < this.salesService.PAGE_SIZE, // Asumiendo PAGE_SIZE = 12
+                    pagination.cursor === null ||
+                    this.cursorStack.length === 0,
+                  isLastPage: result.sales.length < this.salesService.PAGE_SIZE,
                 },
                 isLoading: false,
                 totalItems: result.sales.length,
@@ -140,6 +154,7 @@ export class SalesComponent implements OnInit {
   }
 
   loadTodaysSales(): void {
+    this.cursorStack = [];
     const start = new Date();
     start.setHours(0, 0, 0, 0);
     const end = new Date();
@@ -166,6 +181,7 @@ export class SalesComponent implements OnInit {
 
   nextPage(): void {
     if (!this.lastVisible) return;
+    this.cursorStack.push(this.firstVisible);
     this.paginationCursor$.next({
       direction: 'next',
       cursor: this.lastVisible,
@@ -174,9 +190,10 @@ export class SalesComponent implements OnInit {
 
   prevPage(): void {
     if (!this.firstVisible) return;
+    const previousCursor = this.cursorStack.pop();
     this.paginationCursor$.next({
       direction: 'prev',
-      cursor: this.firstVisible,
+      cursor: previousCursor,
     });
   }
 
