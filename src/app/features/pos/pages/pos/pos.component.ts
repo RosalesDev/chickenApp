@@ -1,4 +1,11 @@
-import { Component, effect, inject, signal } from '@angular/core';
+import {
+  Component,
+  effect,
+  inject,
+  signal,
+  ElementRef,
+  HostListener,
+} from '@angular/core';
 import { ProductService } from '../../services/product.service';
 import { CurrencyPipe, UpperCasePipe } from '@angular/common';
 import { Product } from '../../../../core/models/product-model';
@@ -55,7 +62,7 @@ export class PosComponent {
     total: 0,
   }); // Resumen de la venta
 
-  constructor() {
+  constructor(private elementRef: ElementRef) {
     // Recalcular el subtotal automáticamente cuando cambie la lista de productos
     effect(() => {
       let acumulated: number = 0;
@@ -110,6 +117,18 @@ export class PosComponent {
     }
     this.focusBarcodeInput();
   }
+
+  @HostListener('document:click', ['$event'])
+  onClickOutside(event: Event): void {
+    // Verifica si la lista está visible Y si el clic fue FUERA del componente
+    if (
+      this.showFilteredProducts() &&
+      !this.elementRef.nativeElement.contains(event.target)
+    ) {
+      this.showFilteredProducts.set(false);
+    }
+  }
+
   focusBarcodeInput(): void {
     console.log('Enfocando el input de código de barras...');
     setTimeout(() => {
@@ -290,30 +309,178 @@ export class PosComponent {
   }
 
   selectProduct(item: Product, input: HTMLInputElement): void {
+    this.showFilteredProducts.set(false);
+    input.value = '';
+
     const isProductInList = this.scannedProducts().find(
       (product) => item.name === product.name
     );
 
-    if (isProductInList) {
-      // Incrementa la cantidad si el producto ya existe en la lista
-      isProductInList.quantity++;
-      this.scannedProducts.update((products) =>
-        products.map((product) =>
-          product.name === item.name ? isProductInList : product
-        )
-      );
-      this.hideLoadingModal(); // Oculta el modal
+    if (item.isWeighed) {
+      this.showWeighableProductAlert(item);
     } else {
-      const newProduct = {
-        ...item, // Información del producto
-        quantity: 1, // Inicializa la cantidad en 1
-      };
-      this.scannedProducts.update((products) => [...products, newProduct]);
+      this.showUnitProductAlert(item);
     }
-    this.showFilteredProducts.set(false);
-    input.value = '';
-    this.focusBarcodeInput();
   }
+  /**
+   * * Muestra un modal para agregar un producto por unidad.
+   * * Permite ingresar la cantidad y calcula el subtotal.
+   * @param product - Producto seleccionado.
+   */
+  private showUnitProductAlert(product: Product): void {
+    Swal.fire({
+      title: product.name,
+      html: `
+        <p class="mb-2">Precio unitario: <strong>${product.priceByUnit?.toLocaleString(
+          'es-AR',
+          { style: 'currency', currency: 'ARS' }
+        )}</strong></p>
+        <hr>
+        <div class="swal2-input-container">
+          <label for="swal-input-quantity" class="form-label">Cantidad:</label>
+          <input id="swal-input-quantity" class="swal2-input" type="number" value="1" min="1" step="1">
+          <h3 class="mt-4">Subtotal: <strong id="subtotal-display">${product.priceByUnit?.toLocaleString(
+            'es-AR',
+            { style: 'currency', currency: 'ARS' }
+          )}</strong></h3>
+        </div>
+      `,
+      confirmButtonText: 'Agregar',
+      showCancelButton: true,
+      cancelButtonText: 'Cancelar',
+      // Se ejecuta cuando el modal se renderiza
+      didOpen: () => {
+        const quantityInput = document.getElementById(
+          'swal-input-quantity'
+        ) as HTMLInputElement;
+        quantityInput.focus();
+        quantityInput.oninput = () => {
+          const quantity = parseInt(quantityInput.value, 10) || 0;
+          const subtotal = quantity * product.priceByUnit!;
+          const subtotalDisplay = document.getElementById('subtotal-display')!;
+          subtotalDisplay.innerText = subtotal.toLocaleString('es-AR', {
+            style: 'currency',
+            currency: 'ARS',
+          });
+        };
+      },
+      // Valida antes de confirmar
+      preConfirm: () => {
+        const quantity = parseInt(
+          (document.getElementById('swal-input-quantity') as HTMLInputElement)
+            .value,
+          10
+        );
+        if (!quantity || quantity < 1) {
+          Swal.showValidationMessage('La cantidad debe ser al menos 1');
+          return false; // Evita que el modal se cierre
+        }
+        return quantity;
+      },
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const productToAdd = {
+          ...product,
+          quantity: result.value,
+          subtotal: result.value * product.priceByUnit!,
+        };
+        this.addProductToList(productToAdd);
+      }
+      this.focusBarcodeInput();
+    });
+  }
+
+  private showWeighableProductAlert(product: Product): void {
+    Swal.fire({
+      title: product.name,
+      html: `
+        <p class="mb-2">Precio por Kilo: <strong>${product.priceByKg?.toLocaleString(
+          'es-AR',
+          { style: 'currency', currency: 'ARS' }
+        )}/Kg.</strong></p>
+        <hr>
+        <div class="swal2-input-container">
+          <label for="swal-input-weight" class="form-label">Peso (en gramos):</label>
+          <input id="swal-input-weight" class="swal2-input" type="number" placeholder="Ej: 1500" min="100">
+          <h3 class="mt-4">Subtotal: <strong id="subtotal-display">$0.00</strong></h3>
+        </div>
+      `,
+      confirmButtonText: 'Agregar',
+      showCancelButton: true,
+      cancelButtonText: 'Cancelar',
+      didOpen: () => {
+        const weightInput = document.getElementById(
+          'swal-input-weight'
+        ) as HTMLInputElement;
+        weightInput.focus();
+        weightInput.oninput = () => {
+          const weightInGrams = parseInt(weightInput.value, 10) || 0;
+          const subtotal = (weightInGrams / 1000) * product.priceByKg!;
+          const subtotalDisplay = document.getElementById('subtotal-display')!;
+          subtotalDisplay.innerText = subtotal.toLocaleString('es-AR', {
+            style: 'currency',
+            currency: 'ARS',
+          });
+        };
+      },
+      preConfirm: () => {
+        const weight = parseInt(
+          (document.getElementById('swal-input-weight') as HTMLInputElement)
+            .value,
+          10
+        );
+        if (!weight || weight < 100) {
+          Swal.showValidationMessage('El peso mínimo es de 100 gramos');
+          return false;
+        }
+        return weight; // Retorna el peso en gramos
+      },
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const weightInGrams = result.value;
+        const weightInKg = weightInGrams / 1000;
+        const productToAdd = {
+          ...product,
+          quantity: weightInKg, // Guardamos la cantidad en Kg
+          subtotal: weightInKg * product.priceByKg!,
+        };
+        this.addProductToList(productToAdd);
+      }
+      this.focusBarcodeInput();
+    });
+  }
+  private addProductToList(productToAdd: Product): void {
+    // Esta función no necesita cambios, maneja la lógica de agregar a la lista.
+    const existingProduct = this.scannedProducts().find(
+      (p) => p.id === productToAdd.id && !p.isWeighed
+    );
+
+    if (existingProduct) {
+      existingProduct.quantity += productToAdd.quantity;
+      this.scannedProducts.update((products) =>
+        products.map((p) => (p.id === existingProduct.id ? existingProduct : p))
+      );
+    } else {
+      this.scannedProducts.update((products) => [...products, productToAdd]);
+    }
+  }
+
+  // if (isProductInList) {
+  //   // Incrementa la cantidad si el producto ya existe en la lista
+  //   isProductInList.quantity++;
+  //   this.scannedProducts.update((products) =>
+  //     products.map((product) =>
+  //       product.name === item.name ? isProductInList : product
+  //     )
+  //   );
+  //   this.hideLoadingModal(); // Oculta el modal
+  // } else {
+  //   const newProduct = {
+  //     ...item, // Información del producto
+  //     quantity: 1, // Inicializa la cantidad en 1
+  //   };
+  //   this.scannedProducts.update((products) => [...products, newProduct]);
+  // }
 
   removeProduct(productId: string): void {
     this.scannedProducts.update((products) =>
