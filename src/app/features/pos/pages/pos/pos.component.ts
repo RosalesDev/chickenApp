@@ -90,6 +90,10 @@ export class PosComponent {
     });
   }
 
+  ngOnDestroy(): void {
+    sessionStorage.removeItem('productList');
+  }
+
   ngOnInit(): void {
     if (
       !sessionStorage.getItem('productList') ||
