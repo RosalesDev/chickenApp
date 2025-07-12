@@ -50,7 +50,7 @@
           </tr>
         </thead>
         <tbody>
-          @for(product of scannedProducts(); track product.id){
+          @for(product of productToSaleList(); track product.id){
           <tr [@fadeOutAnimation] class="text-center">
             <td>{{ product.name | uppercase }}</td>
             <td>
@@ -105,7 +105,7 @@
         (focusBarcodeInput)="focusBarcodeInput()"
         [saleSummary]="currentSaleSummary()"
       ></app-sale-summary-modal>
-      @if(scannedProducts().length > 0){
+      @if(productToSaleList().length > 0){
       <div class="row">
         <div class="col text-center">
           <button

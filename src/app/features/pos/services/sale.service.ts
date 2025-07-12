@@ -208,8 +208,6 @@ export class SaleService {
         // FINALMENTE: guardar la venta sin timestamps
         transaction.set(saleRef, {
           ...sale,
-          createdAt: null,
-          updatedAt: null,
           is_local_sale: true,
         });
       });
@@ -230,7 +228,7 @@ export class SaleService {
 
       return {
         success: false,
-        message: error.message || 'Error desconocido al guardar la venta',
+        message: error.message || 'Error al guardar la venta',
       };
     }
   }

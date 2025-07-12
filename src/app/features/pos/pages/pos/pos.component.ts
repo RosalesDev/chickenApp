@@ -46,7 +46,7 @@ import Swal from 'sweetalert2';
   ],
 })
 export class PosComponent {
-  scannedProducts = signal<Product[]>([]); // Lista de productos escaneados
+  productToSaleList = signal<Product[]>([]); // Lista de productos escaneados
   filteredProducts: Product[] = [];
   selectedProduct!: Product;
   productsFoundByName = signal<Product[]>([]); // Resultado de la busqueda por nombre
@@ -66,7 +66,7 @@ export class PosComponent {
     // Recalcular el subtotal automáticamente cuando cambie la lista de productos
     effect(() => {
       let acumulated: number = 0;
-      this.scannedProducts().forEach((product) => {
+      this.productToSaleList().forEach((product) => {
         if (product.amount_to_pay) {
           acumulated += product.amount_to_pay * product.quantity;
         } else {
@@ -76,10 +76,11 @@ export class PosComponent {
                 ? product.priceByUnit! * product.quantity
                 : product.priceByKg! * product.quantity;
           } else {
+            product.isWeighed
+              ? product.priceByKg! * product.quantity
+              : product.priceByUnit! * product.quantity;
             if (!product.priceByUnit) {
               acumulated += product?.priceByKg! * product!.quantity;
-            } else {
-              acumulated += product?.priceByUnit! * product!.quantity;
             }
           }
         }
@@ -143,10 +144,10 @@ export class PosComponent {
   //TODO: Hacer que la venta se genere despues de que presionen el boton de finalizar venta.
   updateSaleSummary(): void {
     console.log('Total enviado desde pos:', this.subtotal());
-    console.log('Productos enviados desde pos:', this.scannedProducts());
+    console.log('Productos enviados desde pos:', this.productToSaleList());
 
     this.currentSaleSummary.set({
-      products: this.scannedProducts(),
+      products: this.productToSaleList(),
       total: this.subtotal(),
     }); // Actualiza el resumen de la venta.
   }
@@ -166,16 +167,16 @@ export class PosComponent {
       this.hideLoadingModal();
     } else {
       //Asumo que si un producto se guarda con un código de barras, no se puede guardar con un PLU.
-      const isInProductList = this.scannedProducts().find(
+      const foundProductInSale = this.productToSaleList().find(
         (product) => product.barcode === inputValue
       );
 
-      if (isInProductList) {
+      if (foundProductInSale) {
         // Incrementa la cantidad si el producto ya existe en la lista
-        isInProductList.quantity++;
-        this.scannedProducts.update((products) =>
+        foundProductInSale.quantity++;
+        this.productToSaleList.update((products) =>
           products.map((product) =>
-            product.barcode === inputValue ? isInProductList : product
+            product.barcode === inputValue ? foundProductInSale : product
           )
         );
         this.hideLoadingModal(); // Oculta el modal
@@ -188,14 +189,14 @@ export class PosComponent {
         if (product().length === 0) {
           inputType = 'PLU';
           const pluCode: string = inputValue.slice(1, 6);
-          const isInProductList = this.scannedProducts().find(
+          const foundProductInSale = this.productToSaleList().find(
             (product) => product.pluCode === pluCode
           );
-          if (isInProductList) {
-            isInProductList.quantity++;
-            this.scannedProducts.update((products) =>
+          if (foundProductInSale) {
+            foundProductInSale.quantity++;
+            this.productToSaleList.update((products) =>
               products.map((product) =>
-                product.pluCode === pluCode ? isInProductList : product
+                product.pluCode === pluCode ? foundProductInSale : product
               )
             );
             this.hideLoadingModal(); // Oculta el modal
@@ -204,65 +205,87 @@ export class PosComponent {
               pluCode
             );
 
-            console.log('Producto encontrado por PLU:', productByPlu[0]);
-            if (productByPlu.length > 0) {
-              const newProduct = {
-                ...productByPlu[0], // Información del producto
-                quantity: 1, // Inicializa la cantidad en 1
-                amount_to_pay: Number(inputValue.slice(6, 12)),
-              };
-              this.scannedProducts.update((products) => [
-                ...products,
-                newProduct,
-              ]);
-              console.log('Scanned Products: ', this.scannedProducts());
-            } else {
-              console.log('No se encontró el producto');
+            const numberOfProductsFound = productByPlu.length;
+
+            switch (numberOfProductsFound) {
+              case 0:
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Producto no encontrado',
+                  text: `No se encontró ningún producto con el PLU ${pluCode}.`,
+                });
+                this.hideLoadingModal();
+                return;
+              case 1:
+                const newProduct = {
+                  ...productByPlu[0], // Información del producto
+                  quantity: 1, // Inicializa la cantidad en 1
+                  amount_to_pay: Number(inputValue.slice(6, 12)),
+                };
+                this.productToSaleList.update((products) => [
+                  ...products,
+                  newProduct,
+                ]);
+                console.log('Scanned Products: ', this.productToSaleList());
+                return;
+              default:
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Múltiples productos encontrados',
+                  text: `Se encontraron ${numberOfProductsFound} productos con el PLU ${pluCode}.`,
+                });
+                this.hideLoadingModal();
+                return;
             }
           }
         } else {
-          // const newProduct = {
-          //   ...product()[0], // Información del producto
-          //   quantity: 1, // Inicializa la cantidad en 1
-          // };
-          // this.scannedProducts.update((products) => [...products, newProduct]);
+          // BUSQUEDA POR CÓDIGO DE BARRAS POSITIVA
+
+          if (product().length > 1) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Múltiples productos encontrados',
+              text: `Se encontraron ${
+                product().length
+              } productos con el código de barras ${inputValue}.`,
+            });
+            this.hideLoadingModal();
+            return;
+          }
           const foundProduct = product()[0];
 
-          if (foundProduct.priceByUnit && foundProduct.priceByKg) {
-            const priceType = await this.promptPriceTypeSelection(foundProduct);
-
-            if (!priceType) {
-              this.hideLoadingModal(); // Usuario canceló
-              return;
-            }
-
-            const newProduct = {
-              ...foundProduct,
-              quantity: 1,
-              price:
-                priceType === 'unit'
-                  ? foundProduct.priceByUnit
-                  : foundProduct.priceByKg,
-              priceType, // para guardar cuál se eligió
-            };
-            this.scannedProducts.update((products) => [
-              ...products,
-              newProduct,
-            ]);
-          } else {
-            const newProduct = {
-              ...foundProduct,
-              quantity: 1, // Inicializa la cantidad en 1
-            };
-            this.scannedProducts.update((products) => [
-              ...products,
-              newProduct,
-            ]);
-          }
+          await this.determinePriceType(foundProduct);
         }
 
         this.hideLoadingModal(); // Oculta el modal
       }
+    }
+  }
+  async determinePriceType(foundProduct: Product) {
+    if (foundProduct.priceByUnit && foundProduct.priceByKg) {
+      const priceType = await this.promptPriceTypeSelection(foundProduct);
+
+      if (!priceType) {
+        this.hideLoadingModal(); // Usuario canceló
+        return;
+      }
+
+      const newProduct = {
+        ...foundProduct,
+        quantity: 1,
+        price:
+          priceType === 'unit'
+            ? foundProduct.priceByUnit
+            : foundProduct.priceByKg,
+        priceType, // para guardar cuál se eligió
+      };
+      this.productToSaleList.update((products) => [...products, newProduct]);
+    } else {
+      const newProduct = {
+        ...foundProduct,
+        quantity: 1, // Inicializa la cantidad en 1
+      };
+      this.productToSaleList.update((products) => [...products, newProduct]);
     }
   }
 
@@ -285,7 +308,7 @@ export class PosComponent {
   }
 
   clearCart(): void {
-    this.scannedProducts.set([]); // Limpia los productos
+    this.productToSaleList.set([]); // Limpia los productos
     this.subtotal.set(0); // Reinicia el subtotal
   }
   onSearchByName(searchTerm: string) {
@@ -298,29 +321,50 @@ export class PosComponent {
       );
       this.showFilteredProducts.set(this.filteredProducts.length > 0);
     }
-    // if (searchTerm.length >= 3 && products) {
-    //   this.filteredProducts = products.filter((product: Product) =>
-    //     product.name.toLowerCase().includes(searchTerm.toLowerCase())
-    //   );
-    //   this.showFilteredProducts.set(this.filteredProducts.length > 0);
-    // } else {
-    //   this.filteredProducts = [];
-    // }
   }
 
   selectProduct(item: Product, input: HTMLInputElement): void {
     this.showFilteredProducts.set(false);
     input.value = '';
 
-    const isProductInList = this.scannedProducts().find(
-      (product) => item.name === product.name
-    );
+    Swal.fire({
+      title: 'Seleccionar Tipo de Venta',
+      html: `
+        <div style="display: flex; justify-content: center; gap: 1rem;">
+            <input type="radio" id="kilo" name="tipoVenta" value="kilo" checked>
+            <label for="kilo">Por Kilo</label>
+            <input type="radio" id="unidad" name="tipoVenta" value="unit">
+            <label for="unidad">Por Unidad</label>
+        </div>`,
+      confirmButtonText: 'Aceptar',
+      focusConfirm: false,
+      preConfirm: () => {
+        // Obtiene el valor del radio button seleccionado
+        const tipoVenta = (
+          Swal.getPopup()!.querySelector(
+            'input[name="tipoVenta"]:checked'
+          ) as HTMLInputElement | null
+        )?.value;
+        if (!tipoVenta) {
+          Swal.showValidationMessage(`Por favor, selecciona una opción`);
+          return false;
+        }
+        return tipoVenta;
+      },
+    }).then((result) => {
+      // Si el usuario presionó "Aceptar" y la validación fue exitosa
+      if (result.isConfirmed) {
+        const tipoSeleccionado = result.value; // 'kilo' o 'unit'
 
-    if (item.isWeighed) {
-      this.showWeighableProductAlert(item);
-    } else {
-      this.showUnitProductAlert(item);
-    }
+        console.log('El usuario seleccionó:', tipoSeleccionado);
+
+        if (tipoSeleccionado === 'kilo') {
+          this.showWeighableProductAlert(item);
+        } else {
+          this.showUnitProductAlert(item);
+        }
+      }
+    });
   }
   /**
    * * Muestra un modal para agregar un producto por unidad.
@@ -381,6 +425,7 @@ export class PosComponent {
       if (result.isConfirmed) {
         const productToAdd = {
           ...product,
+          priceType: 'unit',
           quantity: result.value,
           subtotal: result.value * product.priceByUnit!,
         };
@@ -441,6 +486,7 @@ export class PosComponent {
         const weightInKg = weightInGrams / 1000;
         const productToAdd = {
           ...product,
+          priceType: 'kilo',
           quantity: weightInKg, // Guardamos la cantidad en Kg
           subtotal: weightInKg * product.priceByKg!,
         };
@@ -451,39 +497,22 @@ export class PosComponent {
   }
   private addProductToList(productToAdd: Product): void {
     // Esta función no necesita cambios, maneja la lógica de agregar a la lista.
-    const existingProduct = this.scannedProducts().find(
+    const existingProduct = this.productToSaleList().find(
       (p) => p.id === productToAdd.id && !p.isWeighed
     );
 
     if (existingProduct) {
       existingProduct.quantity += productToAdd.quantity;
-      this.scannedProducts.update((products) =>
+      this.productToSaleList.update((products) =>
         products.map((p) => (p.id === existingProduct.id ? existingProduct : p))
       );
     } else {
-      this.scannedProducts.update((products) => [...products, productToAdd]);
+      this.productToSaleList.update((products) => [...products, productToAdd]);
     }
   }
 
-  // if (isProductInList) {
-  //   // Incrementa la cantidad si el producto ya existe en la lista
-  //   isProductInList.quantity++;
-  //   this.scannedProducts.update((products) =>
-  //     products.map((product) =>
-  //       product.name === item.name ? isProductInList : product
-  //     )
-  //   );
-  //   this.hideLoadingModal(); // Oculta el modal
-  // } else {
-  //   const newProduct = {
-  //     ...item, // Información del producto
-  //     quantity: 1, // Inicializa la cantidad en 1
-  //   };
-  //   this.scannedProducts.update((products) => [...products, newProduct]);
-  // }
-
   removeProduct(productId: string): void {
-    this.scannedProducts.update((products) =>
+    this.productToSaleList.update((products) =>
       products
         .map((product) => {
           if (product.id === productId) {
@@ -525,7 +554,7 @@ export class PosComponent {
   }
 
   cleanSale(): void {
-    this.scannedProducts.set([]); // Limpia los productos escaneados
+    this.productToSaleList.set([]); // Limpia los productos escaneados
     this.focusBarcodeInput();
   }
 
