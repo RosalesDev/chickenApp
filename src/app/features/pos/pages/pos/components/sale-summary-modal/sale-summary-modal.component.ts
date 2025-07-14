@@ -13,8 +13,12 @@ import { FormsModule } from '@angular/forms';
 import { ModalProductsTableComponent } from './components/modal-products-table/modal-products-table.component';
 import Swal from 'sweetalert2';
 import { SaleService } from '../../../../services/sale.service';
-import { PaymentMethod } from '../../../../../../core/models/paymentMethod-model';
+import {
+  PaymentMethod,
+  PaymentType,
+} from '../../../../../../core/models/paymentMethod-model';
 import { TicketService } from '../../../../services/ticket.service';
+import { PaymentFactory } from './payment.factory';
 
 @Component({
   selector: 'app-sale-summary-modal',
@@ -31,6 +35,7 @@ export class SaleSummaryModalComponent {
   @Output() focusBarcodeInput = new EventEmitter<void>();
   private saleService = inject(SaleService);
   private ticketService = inject(TicketService);
+  private paymentFactory: PaymentFactory;
 
   notifyParent() {
     this.cleanSale.emit();
@@ -64,6 +69,14 @@ export class SaleSummaryModalComponent {
   isPaymentInputFirstFocus = true;
   isLoading = false;
 
+  constructor() {
+    this.paymentFactory = new PaymentFactory();
+  }
+
+  updatePaymentSum() {
+    this.paymentSum.set(this.payments.reduce((sum, p) => sum + p.amount, 0));
+  }
+
   resetTotalToPay() {
     this.discount.set(0);
     this.payments = [];
@@ -73,27 +86,63 @@ export class SaleSummaryModalComponent {
 
   setPaymentAmount(event: Event, index: number) {
     const input = event.target as HTMLInputElement;
+    switch (this.payments[index].type) {
+      case 'cash':
+        this.payments[index].name = 'Efectivo';
+        break;
+      case 'mp':
+        this.payments[index].name = 'MercadoPago';
+        break;
+      case 'brubank':
+        this.payments[index].name = 'Brubank';
+        break;
+      case 'nx':
+        this.payments[index].name = 'NaranjaX';
+        break;
+      default:
+        this.payments[index].name = 'Otro';
+        break;
+    }
     this.payments[index].amount = Number(input.value);
-    this.paymentSum.set(this.payments.reduce((sum, p) => sum + p.amount, 0));
+    this.updatePaymentSum();
   }
 
-  addPayment(payment: PaymentMethod = { type: 'cash', amount: 0 }) {
+  addPayment(
+    payment: PaymentMethod = { type: 'cash', amount: 0, name: 'Efectivo' }
+  ) {
     this.payments.push(payment);
   }
 
-  addTotalCashPayment() {
+  public addTotalPayment(type: PaymentType) {
     this.isPaymentInputFirstFocus = false;
-    let payment: PaymentMethod = {
-      type: 'cash',
-      amount: this.totalToPay(),
-    };
-    this.payments.push(payment);
-    this.paymentSum.set(this.payments.reduce((sum, p) => sum + p.amount, 0));
+
+    try {
+      // Usamos la fábrica para crear el objeto de pago
+      const payment = this.paymentFactory.createPayment(
+        type,
+        this.totalToPay()
+      );
+
+      this.payments.push(payment);
+      this.updatePaymentSum();
+    } catch (error) {
+      console.error(`Error al procesar el pago de tipo ${type}:`, error);
+      // Aquí podrías manejar el error, por ejemplo, mostrando una notificación al usuario.
+    }
   }
+  // addTotalCashPayment() {
+  //   this.isPaymentInputFirstFocus = false;
+  //   let payment: PaymentMethod = {
+  //     type: 'cash',
+  //     amount: this.totalToPay(),
+  //   };
+  //   this.payments.push(payment);
+  //   this.paymentSum.set(this.payments.reduce((sum, p) => sum + p.amount, 0));
+  // }
 
   removePayment(index: number) {
     this.payments.splice(index, 1);
-    this.paymentSum.set(this.payments.reduce((sum, p) => sum + p.amount, 0));
+    this.updatePaymentSum();
   }
 
   finalizeSale() {

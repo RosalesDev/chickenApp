@@ -22,10 +22,10 @@ import { DocumentData, DocumentSnapshot } from 'firebase/firestore';
 import { SaleDto } from '../../../../core/dtos/SaleDto';
 import { CommonModule } from '@angular/common';
 
-// --- (NUEVO) INTERFAZ PARA EL VIEWMODEL ---
 // Define la "forma" de todo el estado que necesita nuestra vista.
 interface SalesViewModel {
   sales: SaleDto[];
+  totalsByType: { [key: string]: number };
   pagination: {
     isFirstPage: boolean;
     isLastPage: boolean;
@@ -93,6 +93,7 @@ export class SalesComponent implements OnInit {
         );
         const initialLoadingState: SalesViewModel = {
           sales: [],
+          totalsByType: {},
           pagination: { isFirstPage: true, isLastPage: false },
           isLoading: true,
           totalItems: 0,
@@ -106,18 +107,25 @@ export class SalesComponent implements OnInit {
               // Actualizamos los cursores para la próxima paginación
               this.firstVisible = result.firstVisible;
               this.lastVisible = result.lastVisible;
-              this.vm$.subscribe({
-                next: (v) => console.log('Valor de vm$:', v),
-                error: (err) => console.error('Error en vm$:', err),
-                complete: () => console.log('vm$ completado'),
-              });
-              console.log(this.cursorStack[0]);
-              console.log('firstVisible:', this.firstVisible?.data()!['total']);
-              console.log('lastVisible:', this.lastVisible?.data()!['total']);
+              // 1. Aplanamos el array de pagos en uno solo
+              const allPayments = result.sales.flatMap(
+                (sale) => sale.payment_method
+              );
+              const totalsByType = allPayments.reduce(
+                (accumulator, payment) => {
+                  const { name, amount } = payment;
+                  // Si el tipo no existe en el acumulador, lo inicializa en 0, luego suma.
+                  accumulator[name] = (accumulator[name] || 0) + amount;
+                  return accumulator;
+                },
+                {} as { [key: string]: number }
+              );
 
+              console.log('totalsByType:', totalsByType);
               // Devolvemos el objeto completo que la vista necesita
               return {
                 sales: result.sales,
+                totalsByType: totalsByType,
                 pagination: {
                   isFirstPage:
                     pagination.direction === 'initial' ||
@@ -135,6 +143,7 @@ export class SalesComponent implements OnInit {
             catchError(() => {
               return of({
                 sales: [],
+                totalsByType: {},
                 pagination: { isFirstPage: true, isLastPage: true },
                 isLoading: false,
                 totalItems: 0,

@@ -107,6 +107,21 @@
         </nav>
         }
       </div>
+      <div class="card mt-1 shadow-sm">
+        <div class="card-body">
+          <div class="row">
+            <ul class="list-group">
+              <li
+                *ngFor="let item of vm.totalsByType | keyvalue"
+                class="list-group-item"
+              >
+                <strong>{{ item.key }}:</strong>
+                {{ item.value | currency : "$" }}
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="col-lg-7 col-xl-8">

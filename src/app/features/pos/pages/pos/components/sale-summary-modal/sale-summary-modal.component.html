@@ -71,7 +71,7 @@
                 aria-label="Tipo de pago"
               >
                 <option value="cash">Efectivo</option>
-                <option value="card">Tarjeta</option>
+                <option value="mp">MercadoPago</option>
                 <option value="other">Otro</option>
               </select>
               <div class="my-auto">$</div>
@@ -111,9 +111,23 @@
                 <button
                   class="btn w-100 btn-success"
                   type="button"
-                  (click)="addTotalCashPayment()"
+                  (click)="addTotalPayment('cash')"
                 >
                   Total en Efectivo
+                </button>
+              </div>
+              }
+            </div>
+            <div class="row justify-content-end mt-1">
+              @if(payments.length === 0){
+              <div class="col-6">
+                <button
+                  class="btn w-100"
+                  style="background-color: rgb(70, 157, 220); color: white"
+                  type="button"
+                  (click)="addTotalPayment('mp')"
+                >
+                  Total por MercadoPago
                 </button>
               </div>
               }
