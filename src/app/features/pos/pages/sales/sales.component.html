@@ -7,7 +7,7 @@
       <form
         [formGroup]="filterForm"
         (ngSubmit)="applyFilters()"
-        class="row g-3 align-items-end"
+        class="row g-3 align-items-end w-50"
       >
         <div class="col-md">
           <label for="startDate" class="form-label">Fecha Inicio</label>
@@ -59,11 +59,11 @@
     </div>
   </div>
   } @else { @if (vm.sales.length > 0) {
-  <div class="row g-4">
-    <div class="col-lg-5 col-xl-4">
+  <div class="row justify-content-center">
+    <div class="col-6 col-xl-4">
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0">Resultados ({{ vm.totalItems }})</h5>
+          <h5 class="mb-0">Resultados: {{ vm.totalItems }}</h5>
         </div>
         <div class="list-group list-group-flush">
           @for (sale of vm.sales; track sale.id) {
@@ -73,23 +73,28 @@
             [class.active]="sale.id === selectedSale()?.id"
             (click)="selectSale(sale)"
           >
-            <div class="d-flex w-100 justify-content-between">
-              <small
+            <div class="row justify-content-between py-1">
+              <span class="col-5"
                 ><i class="bi bi-calendar-event me-1"></i
-                >{{ sale.date_created | date : "dd/MM/yy HH:mm" }}</small
+                >{{ sale.date_created | date : "dd/MM/yy HH:mm" }}</span
               >
-              <div class="row align-items-start">
-                <span
-                  ><i class="bi bi-cart3 me-2"></i
-                  >{{ sale.products_list.length }}
-                  {{
-                    sale.products_list.length === 1 ? "producto" : "productos"
-                  }}</span
-                >
-              </div>
-              <span class="fw-medium fs-6">{{
+              <span class="col-5 fw-medium fs-6">{{
                 sale.total | currency : "ARS" : "$"
               }}</span>
+              <span class="col text-end pe-4">
+                <i
+                  class="bi bi-cart3 position-relative"
+                  style="font-size: 20px"
+                >
+                  <span
+                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger ms-2"
+                    style="font-size: 11px"
+                  >
+                    {{ sale.products_list.length }}
+                    <span class="visually-hidden">unread messages</span>
+                  </span></i
+                >
+              </span>
             </div>
           </button>
           }
@@ -124,7 +129,7 @@
       </div>
     </div>
 
-    <div class="col-lg-7 col-xl-8">
+    <div class="col-5 m-auto">
       @if (selectedSale(); as sale) {
       <div class="card shadow-sm sticky-top" style="top: 20px">
         <div
@@ -141,21 +146,14 @@
         <div class="card-body">
           <div class="row mb-3">
             <div class="col-md-6 mb-2">
-              <strong>Fecha:</strong>
+              <i class="bi bi-calendar-event me-1"></i>
               <span>{{ sale.date_created | date : "dd/MM/yy HH:mm" }}</span>
-            </div>
-            <div class="col-md-6 mb-2 text-md-end">
-              <strong>Total:</strong>
-              <span class="fw-bold text-success fs-4 ms-2">{{
-                sale.total | currency : "ARS" : "$"
-              }}</span>
             </div>
           </div>
           <hr />
           <h6>
-            <i class="bi bi-cart3 me-2"></i>Items ({{
-              sale.products_list.length
-            }})
+            <i class="bi bi-cart3 me-2"></i>Items:
+            {{ sale.products_list.length }}
           </h6>
           <ul class="list-group list-group-flush mt-3">
             @for (item of sale.products_list; track item.id) {
@@ -163,9 +161,21 @@
               class="list-group-item d-flex justify-content-between align-items-center px-1"
             >
               <div>
-                {{ item.name }}
+                <strong>{{ item.name }}</strong>
+                @if(item.priceByKg){
+                <small class="text-muted d-block"
+                  >$/Kg.: {{ item.priceByKg | currency : "ARS" : "$" }}</small
+                >
+                } @if(item.priceByUnit){
+                <small class="text-muted d-block"
+                  >$/Uni.:
+                  {{ item.priceByUnit | currency : "ARS" : "$" }}</small
+                >}
                 <small class="text-muted d-block"
                   >Cant: {{ item.quantity }}</small
+                >
+                <small class="text-muted d-block"
+                  >Subtotal: {{ item.subtotal }}</small
                 >
               </div>
               <span class="fw-medium">{{
@@ -174,6 +184,27 @@
             </li>
             }
           </ul>
+          <ul class="list-group list-group-flush">
+            <li
+              *ngFor="
+                let item of getTotalByType(sale.payment_method) | keyvalue
+              "
+              class="list-group-item d-flex justify-content-between align-items-center px-1"
+            >
+              <div>
+                <strong>{{ item.key }}:</strong>
+                {{ item.value | currency : "$" }}
+              </div>
+            </li>
+          </ul>
+          <div class="row justify-content-end">
+            <div class="col-md-6 mb-2 text-md-end">
+              <strong>Total:</strong>
+              <span class="fw-bold text-success fs-4 ms-2">{{
+                sale.total | currency : "ARS" : "$"
+              }}</span>
+            </div>
+          </div>
         </div>
       </div>
       } @else {

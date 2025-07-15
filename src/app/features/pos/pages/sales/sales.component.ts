@@ -21,6 +21,8 @@ import {
 import { DocumentData, DocumentSnapshot } from 'firebase/firestore';
 import { SaleDto } from '../../../../core/dtos/SaleDto';
 import { CommonModule } from '@angular/common';
+import { Product } from '../../../../core/models/product-model';
+import { PaymentMethod } from '../../../../core/models/paymentMethod-model';
 
 // Define la "forma" de todo el estado que necesita nuestra vista.
 interface SalesViewModel {
@@ -160,6 +162,15 @@ export class SalesComponent implements OnInit {
 
   public selectSale(sale: SaleDto | null): void {
     this.selectedSale.set(sale);
+  }
+
+  public getTotalByType(paymentList: PaymentMethod[]): {
+    [key: string]: number;
+  } {
+    return paymentList.reduce((acc, payment) => {
+      acc[payment.name] = (acc[payment.name] || 0) + payment.amount;
+      return acc;
+    }, {} as { [key: string]: number });
   }
 
   loadTodaysSales(): void {

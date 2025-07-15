@@ -10,6 +10,7 @@ export interface Product {
   priceByUnit?: number; // Precio por unidad (opcional, solo si no es por peso)
   quantity: number;
   amount_to_pay?: number;
+  subtotal?: number; // Subtotal del producto
   priceType?: string; // Tipo de precio (por unidad o por peso)
   is_local?: boolean; // Indica si el producto es local (no visible en la app)
 }
