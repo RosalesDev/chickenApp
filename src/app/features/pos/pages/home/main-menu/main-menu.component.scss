@@ -1,0 +1,94 @@
+// Definimos variables de color para un mantenimiento sencillo y consistencia
+:host {
+  --primary-color: #007bff;
+  --primary-hover-color: #0056b3;
+  --card-bg-color: #ffffff;
+  --card-shadow-color: rgba(0, 0, 0, 0.08);
+  --card-hover-shadow-color: rgba(0, 123, 255, 0.2);
+  --text-color: #343a40;
+  --icon-color: #adb5bd;
+  --icon-hover-color: var(--primary-color);
+}
+
+// Estilo general del contenedor
+.menu-container {
+  background-color: #f8f9fa; // Un fondo suave para todo el componente
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+}
+
+// Estilo de la tarjeta de opción
+.menu-card {
+  background-color: var(--card-bg-color);
+  border: none;
+  border-radius: 1rem; // Bordes más redondeados para un look moderno
+  padding: 2rem 1rem;
+  box-shadow: 0 10px 30px var(--card-shadow-color);
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  will-change: transform; // Optimización de rendimiento para la animación
+
+  // Animación de entrada
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeInSlideUp 0.5s ease-out forwards;
+}
+
+// Efecto hover sobre la tarjeta
+.menu-card:hover {
+  transform: translateY(-10px); // Eleva la tarjeta
+  box-shadow: 0 15px 40px var(--card-hover-shadow-color); // Sombra más pronunciada y con color
+}
+
+// Estilo del ícono
+.menu-icon {
+  font-size: 4rem; // Íconos grandes y visibles
+  color: var(--icon-color);
+  transition: color 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+// Estilo del título
+.menu-card .card-title {
+  color: var(--text-color);
+  font-weight: 600;
+  transition: color 0.3s ease-in-out;
+}
+
+// Efecto hover sobre los elementos internos
+.menu-card:hover .menu-icon {
+  color: var(--icon-hover-color);
+  transform: scale(1.1); // El ícono se agranda sutilmente
+}
+
+.menu-card:hover .card-title {
+  color: var(--primary-hover-color);
+}
+
+// Keyframes para la animación de entrada
+@keyframes fadeInSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Media query para mejorar la responsividad en dispositivos pequeños
+@media (max-width: 576px) {
+  .menu-card {
+    padding: 1.5rem 1rem;
+  }
+  .menu-icon {
+    font-size: 3rem;
+  }
+  .card-title {
+    font-size: 1.25rem;
+  }
+}

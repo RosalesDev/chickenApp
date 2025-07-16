@@ -74,7 +74,7 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
         .pipe(takeUntil(this.destroy$)) // Importante: desuscribirse cuando el componente se destruye
         .subscribe((isAdmin) => {
           if (isAdmin) {
-            this.router.navigate(['/home']);
+            this.router.navigate(['/main-menu']);
           } else {
             this.router.navigate(['/home/pos']);
           }

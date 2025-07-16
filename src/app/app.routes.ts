@@ -5,6 +5,7 @@ import { PosComponent } from './features/pos/pages/pos/pos.component';
 import { UnderconstructionpageComponent } from './shared/underconstructionpage/underconstructionpage.component';
 import { authRoleGuard } from './core/guards/auth-role.guard';
 import { SalesComponent } from './features/pos/pages/sales/sales.component';
+import { MainMenuComponent } from './features/pos/pages/home/main-menu/main-menu.component';
 
 export const routes: Routes = [
   {
@@ -16,6 +17,13 @@ export const routes: Routes = [
     path: 'auth/login',
     title: 'ChickenApp - Login',
     component: LoginComponent,
+  },
+  {
+    path: 'main-menu',
+    title: 'ChickenApp - Menu',
+    canActivate: [authRoleGuard],
+    data: { roles: ['ADMIN'] },
+    component: MainMenuComponent,
   },
   {
     path: 'under-construction',

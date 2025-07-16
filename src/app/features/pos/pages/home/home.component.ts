@@ -1,6 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { SidebarComponent } from '../../../../shared/components/sidebar/sidebar.component';
-import { AuthService } from '../../../../core/services/auth.service';
 
 @Component({
   selector: 'app-home',

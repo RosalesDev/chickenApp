@@ -44,7 +44,7 @@
         <hr />
         <ul class="nav nav-pills flex-column mb-auto" id="menu">
           <li *hasRole="'ADMIN'" class="nav-item">
-            <a class="nav-link text-white" routerLink="/home">
+            <a class="nav-link text-white" routerLink="/main-menu">
               <i class="fs-4 bi-house"></i>
               <span class="ms-1 d-none d-sm-inline">Home</span>
             </a>
@@ -115,6 +115,8 @@
         </ul>
       </div>
     </div>
-    <div class="col py-3"><router-outlet /></div>
+    <div class="col py-3">
+      <router-outlet />
+    </div>
   </div>
 </div>

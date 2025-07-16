@@ -6,6 +6,8 @@ import {
   signInWithEmailAndPassword,
   signOut,
   User,
+  setPersistence,
+  browserSessionPersistence,
 } from 'firebase/auth';
 import { User as UserProfile } from '../models/user-model';
 import { UserService } from '../user/user.service';
@@ -93,28 +95,6 @@ export class AuthService {
         this.readySubject.next(true); // Estamos "listos" y en estado "no logueado".
         console.log('AuthService: No hay usuario. Estado listo (ready).');
       }
-      // console.log('Se ejecuta el onAuthStateChanged');
-      // if (user) {
-      //   console.log('Entra al if del onAuthStateChanged', user);
-      //   try {
-      //     this.userProfile$ = this.userService.getUserProfileByExternalId(
-      //       user.uid
-      //     );
-      //     const token = await getIdToken(user, true); // Forzamos renovación del ID token
-      //   } catch (error) {
-      //     console.error('Error al renovar token:', error);
-      //   }
-      //   this.readySubject.next(true);
-      // } else {
-      //   console.log('Entra al else del onAuthStateChanged');
-      //   this.userProfile$ = of(null);
-      //   this.readySubject.next(false);
-      // }
-      // this.userSubject.next(user);
-
-      // setPersistence(this.auth, browserLocalPersistence).catch((error) => {
-      //   console.error('Error configurando la persistencia:', error);
-      // });
     });
   }
 
@@ -173,7 +153,16 @@ export class AuthService {
     return null;
   }
 
+  setPersistence() {
+    return setPersistence(this.auth, browserSessionPersistence)
+      .then(() => console.log('Persistencia configurada a sessionStorage'))
+      .catch((error) => {
+        console.error('Error al configurar la persistencia:', error);
+      });
+  }
+
   login(email: string, password: string) {
+    this.setPersistence();
     return signInWithEmailAndPassword(this.auth, email, password);
   }
 
