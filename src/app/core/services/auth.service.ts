@@ -32,8 +32,8 @@ export class AuthService {
   private firestore = getFirestore();
   private userService = inject(UserService);
   private userSubject = new BehaviorSubject<User | null>(null);
-  private readySubject = new ReplaySubject<boolean>(1);
   user$ = this.userSubject.asObservable();
+  private readySubject = new ReplaySubject<boolean>(1);
   userProfile$: Observable<UserProfile | null> = of(null);
   userRoles$: Observable<string[]> = of([]);
   private userProfileSubscription: Subscription | null = null;
@@ -167,7 +167,7 @@ export class AuthService {
   }
 
   logout() {
-    console.log('Usuairo logueado: ', this.auth.currentUser?.email);
+    console.log('Usuario logueado: ', this.auth.currentUser?.email);
     localStorage.removeItem('token');
     return signOut(this.auth);
   }

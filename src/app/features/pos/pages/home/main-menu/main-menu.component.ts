@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../../../../core/services/auth.service';
+import { UserService } from '../../../../../core/user/user.service';
 
 interface MenuOption {
   title: string;
@@ -15,6 +17,14 @@ interface MenuOption {
   styleUrl: './main-menu.component.scss',
 })
 export class MainMenuComponent {
+  private authService = inject(AuthService);
+  private userService = inject(UserService);
+  user$ = this.userService.user$;
+  router = inject(Router);
+
+  ngOnInit() {
+    console.log(this.authService.getUser());
+  }
   menuOptions: MenuOption[] = [
     {
       title: 'POS',
@@ -37,4 +47,9 @@ export class MainMenuComponent {
       icon: 'bi-box-seam', // Ícono para Productos
     },
   ];
+
+  async logout() {
+    await this.authService.logout();
+    this.router.navigate(['/auth/login']);
+  }
 }
