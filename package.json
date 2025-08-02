@@ -6,7 +6,8 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "deploy": "ng build --configuration=production --base-href /chickenApp/ && npx angular-cli-ghpages --dir=dist/chicken-app/browser"
   },
   "private": true,
   "dependencies": {
