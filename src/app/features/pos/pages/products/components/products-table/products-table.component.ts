@@ -86,6 +86,8 @@ export class ProductsTableComponent {
               title: 'Eliminado!',
               text: 'Se ha eliminado el producto correctamente',
               icon: 'success',
+              showConfirmButton: false,
+              timer: 1200,
             });
           })
           .catch((error) => {

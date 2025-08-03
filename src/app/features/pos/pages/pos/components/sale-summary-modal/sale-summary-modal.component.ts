@@ -57,9 +57,7 @@ export class SaleSummaryModalComponent {
   totalToPay: Signal<number> = computed(() => {
     console.log('total dentro del computed: ', this.saleSummary().total);
 
-    const discountPercentage =
-      (this.saleSummary().total * this.discount()) / 100;
-    const totalWithDiscount = this.saleSummary().total - discountPercentage;
+    const totalWithDiscount = this.saleSummary().total - this.discount();
 
     return totalWithDiscount - this.paymentSum();
   });
@@ -195,11 +193,18 @@ export class SaleSummaryModalComponent {
         Swal.fire({
           icon: 'success',
           title: 'Venta finalizada',
-          text: 'La venta se ha guardado correctamente.',
-          showConfirmButton: true,
+          text: 'Venta guardada',
+          showConfirmButton: false,
+          timer: 1500,
         });
-        this.ticketService.printTicket(this.saleSummary().products);
+        this.ticketService.printTicket(
+          this.saleSummary(),
+          Array.from(this.payments),
+          this.discount()
+        );
         this.notifyFocusBarcodeInput(); // Emitir el evento para enfocar el input de código de barras
+        this.notifyParent(); // Emitir el evento para limpiar la venta
+        this.resetTotalToPay();
       });
     // .catch((error) => {
     //   Swal.close();
@@ -218,8 +223,6 @@ export class SaleSummaryModalComponent {
       discount: this.discount,
       payments: this.payments,
     });
-    this.notifyParent(); // Emitir el evento para limpiar la venta
-    this.resetTotalToPay();
   }
   clearDiscountInput(event: FocusEvent): void {
     if (this.isDiscountInputFirstFocus) {

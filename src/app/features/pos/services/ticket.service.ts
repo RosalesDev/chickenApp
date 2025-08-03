@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Product } from '../../../core/models/product-model';
+import { PaymentMethod } from '../../../core/models/paymentMethod-model';
 
 @Injectable({
   providedIn: 'root',
@@ -7,8 +8,13 @@ import { Product } from '../../../core/models/product-model';
 export class TicketService {
   constructor() {}
 
-  async printTicket(productList: Product[]) {
+  async printTicket(
+    data: { products: Product[]; total: number },
+    payments: PaymentMethod[],
+    discount: number = 0
+  ) {
     const url = 'http://localhost:3000/print';
+    const productList = data.products;
     const ticketData = {
       title: 'Ticket de venta',
       logo: '',
@@ -16,6 +22,9 @@ export class TicketService {
       qr: 'https://www.google.com.ar',
       products: productList,
       date: new Date().toLocaleString(),
+      total: data.total,
+      payments: payments,
+      discount: discount,
     };
 
     try {
