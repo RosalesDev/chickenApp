@@ -34,7 +34,7 @@
               <input
                 type="number"
                 id="discount"
-                placeholder="% descuento"
+                placeholder="Descuento"
                 [(ngModel)]="discount"
                 class="form-control"
                 (focus)="clearDiscountInput($event)"
@@ -52,7 +52,7 @@
           <div class="row justify-content-around">
             <div class="col-auto">
               <span class="fs-6 text-danger">
-                Descuento aplicado: {{ discount() / 100 | percent }}
+                Descuento aplicado: $ {{ discount() }}
               </span>
             </div>
           </div>
