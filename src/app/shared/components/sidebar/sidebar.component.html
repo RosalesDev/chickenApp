@@ -19,18 +19,23 @@
               height="30"
               class="rounded-circle"
             />
-            <div *ngIf="currentUser$ | async as profile">
-              <p class="d-none d-sm-inline mx-1">{{ profile.email }}</p>
+            <div
+              class="ms-2 d-none d-sm-inline text-truncate"
+              *ngIf="currentUser$ | async as profile"
+            >
+              <p class="d-none d-sm-inline mx-auto text-wrap">
+                {{ profile.email }}
+              </p>
               <p class="mx-1 text-center">{{ profile.roles }}</p>
             </div>
           </a>
           <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
-            <li><a class="dropdown-item" href="#">New project...</a></li>
+            <!-- <li><a class="dropdown-item" href="#">New project...</a></li>
             <li><a class="dropdown-item" href="#">Settings</a></li>
             <li><a class="dropdown-item" href="#">Profile</a></li>
             <li>
               <hr class="dropdown-divider" />
-            </li>
+            </li> -->
             <li>
               <a
                 class="dropdown-item"
@@ -98,7 +103,7 @@
           </li>
           <li *hasRole="'ADMIN'">
             <a
-              class="nav-link text-white"
+              class="nav-link text-white disabled"
               routerLink="/under-construction"
               routerLinkActive="active"
             >
