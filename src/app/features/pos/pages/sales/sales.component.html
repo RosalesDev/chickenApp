@@ -60,10 +60,12 @@
   </div>
   } @else { @if (vm.sales.length > 0) {
   <div class="row justify-content-center">
-    <div class="col-6 col-xl-4">
+    <div class="col-3">
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0">Resultados: {{ vm.totalItems }}</h5>
+          <h6 class="mb-0">
+            Listado de ventas ( {{ vm.totalItems }} resultados )
+          </h6>
         </div>
         <div class="list-group list-group-flush">
           @for (sale of vm.sales; track sale.id) {
@@ -73,28 +75,16 @@
             [class.active]="sale.id === selectedSale()?.id"
             (click)="selectSale(sale)"
           >
-            <div class="row justify-content-between py-1">
-              <span class="col-5"
-                ><i class="bi bi-calendar-event me-1"></i
-                >{{ sale.date_created | date : "dd/MM/yy HH:mm" }}</span
-              >
-              <span class="col-5 fw-medium fs-6">{{
-                sale.total | currency : "ARS" : "$"
-              }}</span>
-              <span class="col text-end pe-4">
-                <i
-                  class="bi bi-cart3 position-relative"
-                  style="font-size: 20px"
+            <div class="container text-center">
+              <div class="row justify-content-between">
+                <span class="col-6"
+                  ><i class="bi bi-calendar-event me-1"></i
+                  >{{ sale.date_created | date : "dd/MM/yy HH:mm" }}</span
                 >
-                  <span
-                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-info ms-2"
-                    style="font-size: 11px"
-                  >
-                    {{ sale.products_list.length }}
-                    <span class="visually-hidden">unread messages</span>
-                  </span></i
-                >
-              </span>
+                <span class="col-6 fw-medium fs-6">{{
+                  sale.total | currency : "ARS" : "$"
+                }}</span>
+              </div>
             </div>
           </button>
           }
@@ -112,8 +102,49 @@
         </nav>
         }
       </div>
-      <div class="card mt-1 shadow-sm">
+    </div>
+
+    <div class="col-5">
+      <div class="card shadow-sm">
+        <div class="card-header">
+          <h6 class="mb-0">Productos Vendidos</h6>
+        </div>
         <div class="card-body">
+          <div class="row">
+            <div class="col">
+              <div class="table-responsive">
+                <table class="table">
+                  <thead class="text-center">
+                    <tr>
+                      <th scope="col">Producto</th>
+                      <th scope="col">Precio</th>
+                      <th scope="col">Cantidad</th>
+                      <th scope="col">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for(product of vm.productList; track product.id){
+                    <tr>
+                      <td>{{ product.name }}</td>
+                      <td class="text-center">
+                        @if(product.isWeighed){
+                        {{ product.priceByKg | currency : "ARS" : "$" }}
+                        } @else {
+                        {{ product.priceByUnit | currency : "ARS" : "$" }}
+                        }
+                      </td>
+                      <td class="text-center">{{ product.quantity }}</td>
+                      <td class="text-center">
+                        {{ product.subtotal | currency : "ARS" : "$" }}
+                      </td>
+                    </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
           <div class="row">
             <ul class="list-group">
               <li
@@ -128,14 +159,15 @@
         </div>
       </div>
     </div>
-
-    <div class="col-5 m-auto">
+    <div class="col-4 m-auto">
       @if (selectedSale(); as sale) {
       <div class="card shadow-sm sticky-top" style="top: 20px">
         <div
           class="card-header bg-light d-flex justify-content-between align-items-center"
         >
-          <h5 class="mb-0">Detalle de Venta</h5>
+          <h6 class="mb-0">
+            Detalle de Venta {{ sale.date_created | date : "dd/MM/yy HH:mm" }}
+          </h6>
           <button
             class="btn btn-sm btn-outline-secondary"
             (click)="selectSale(null)"
@@ -144,13 +176,6 @@
           </button>
         </div>
         <div class="card-body">
-          <div class="row mb-3">
-            <div class="col-md-6 mb-2">
-              <i class="bi bi-calendar-event me-1"></i>
-              <span>{{ sale.date_created | date : "dd/MM/yy HH:mm" }}</span>
-            </div>
-          </div>
-          <hr />
           <h6>
             <i class="bi bi-cart3 me-2"></i>Items:
             {{ sale.products_list.length }}
@@ -174,13 +199,16 @@
                 <small class="text-muted d-block"
                   >Cant: {{ item.quantity }}</small
                 >
+                @if(item.amount_to_pay){
                 <small class="text-muted d-block"
-                  >Subtotal: {{ item.subtotal }}</small
+                  >Monto en etiqueta:
+                  {{ item.amount_to_pay | currency : "ARS" : "$" }}</small
+                >
+                }
+                <small class="text-muted d-block"
+                  >Subtotal: {{ item.subtotal | currency : "ARS" : "$" }}</small
                 >
               </div>
-              <span class="fw-medium">{{
-                item.amount_to_pay | currency : "ARS" : "$"
-              }}</span>
             </li>
             }
           </ul>

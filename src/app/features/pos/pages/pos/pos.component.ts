@@ -78,7 +78,7 @@ export class PosComponent {
           } else {
             product.isWeighed
               ? product.priceByKg! * product.quantity
-              : product.priceByUnit! * product.quantity;
+              : (acumulated += product.priceByUnit! * product.quantity);
             if (!product.priceByUnit) {
               acumulated += product?.priceByKg! * product!.quantity;
             }
@@ -178,6 +178,8 @@ export class PosComponent {
       if (foundProductInSale) {
         // Incrementa la cantidad si el producto ya existe en la lista
         foundProductInSale.quantity++;
+        foundProductInSale.subtotal =
+          foundProductInSale.quantity * foundProductInSale.priceByUnit!;
         this.productToSaleList.update((products) =>
           products.map((product) =>
             product.barcode === inputValue ? foundProductInSale : product
@@ -198,6 +200,8 @@ export class PosComponent {
           );
           if (foundProductInSale) {
             foundProductInSale.quantity++;
+            foundProductInSale.subtotal =
+              foundProductInSale.quantity * foundProductInSale.amount_to_pay!;
             this.productToSaleList.update((products) =>
               products.map((product) =>
                 product.pluCode === pluCode ? foundProductInSale : product
@@ -225,12 +229,13 @@ export class PosComponent {
                   ...productByPlu[0], // Información del producto
                   quantity: 1, // Inicializa la cantidad en 1
                   amount_to_pay: Number(inputValue.slice(6, 12)),
+                  subtotal: Number(inputValue.slice(6, 12)),
                 };
                 this.productToSaleList.update((products) => [
                   ...products,
                   newProduct,
                 ]);
-                console.log('Scanned Products: ', this.productToSaleList());
+                this.hideLoadingModal();
                 return;
               default:
                 Swal.fire({
@@ -254,6 +259,7 @@ export class PosComponent {
               } productos con el código de barras ${inputValue}.`,
             });
             this.hideLoadingModal();
+            this.focusBarcodeInput();
             return;
           }
           const foundProduct = product()[0];
@@ -271,6 +277,7 @@ export class PosComponent {
 
       if (!priceType) {
         this.hideLoadingModal(); // Usuario canceló
+        this.focusBarcodeInput();
         return;
       }
 
@@ -285,11 +292,26 @@ export class PosComponent {
       };
       this.productToSaleList.update((products) => [...products, newProduct]);
     } else {
-      const newProduct = {
-        ...foundProduct,
-        quantity: 1, // Inicializa la cantidad en 1
-      };
-      this.productToSaleList.update((products) => [...products, newProduct]);
+      if (foundProduct.priceByUnit) {
+        const newProduct = {
+          ...foundProduct,
+          quantity: 1, // Inicializa la cantidad en 1
+          price: foundProduct.priceByUnit,
+          priceType: 'unit',
+          subtotal: foundProduct.priceByUnit,
+        };
+        this.productToSaleList.update((products) => [...products, newProduct]);
+      }
+      if (foundProduct.priceByKg) {
+        const newProduct = {
+          ...foundProduct,
+          quantity: 1, // Inicializa la cantidad en 1
+          price: foundProduct.priceByKg,
+          priceType: 'kilo',
+          subtotal: foundProduct.priceByKg,
+        };
+        this.productToSaleList.update((products) => [...products, newProduct]);
+      }
     }
   }
 

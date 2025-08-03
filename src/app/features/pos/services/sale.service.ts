@@ -22,6 +22,7 @@ import {
 } from 'firebase/firestore';
 import { SaleDto, SalesFilters } from '../../../core/dtos/SaleDto';
 import { from, map, Observable } from 'rxjs';
+import { Product } from '../../../core/models/product-model';
 
 export interface PaginatedSalesResult {
   sales: SaleDto[];
@@ -151,6 +152,53 @@ export class SaleService {
     // ... otros filtros aquí
 
     return q;
+  }
+
+  /**
+   * Procesa una lista de ventas para obtener un resumen agregado de productos vendidos.
+   *
+   * @param sales - Un arreglo de objetos SaleDto.
+   * @returns Un arreglo de Product con cantidades y subtotales agregados.
+   */
+  getAggregatedSoldProducts(sales: SaleDto[]): Product[] {
+    // Usamos un Map para un rendimiento óptimo al buscar productos existentes.
+    // La clave será el ID del producto (string), y el valor será el objeto Product agregado.
+    const aggregatedProductsMap = new Map<string, Product>();
+
+    // 1. Iterar sobre cada venta en la lista de ventas.
+    for (const sale of sales) {
+      // 2. Iterar sobre cada producto dentro de la lista de productos de la venta.
+      for (const product of sale.products_list) {
+        // Es crucial tener un ID para identificar unívocamente cada producto.
+        if (!product.id) {
+          console.warn(
+            'Se encontró un producto sin ID y será omitido:',
+            product
+          );
+          continue; // Omitir este producto y continuar con el siguiente.
+        }
+
+        // 3. Verificar si el producto ya fue agregado a nuestro mapa.
+        const existingProduct = aggregatedProductsMap.get(product.id);
+
+        if (existingProduct) {
+          // 4a. Si el producto ya existe, actualizamos sus valores.
+          existingProduct.quantity += product.quantity;
+
+          // Nos aseguramos de que los subtotales sean números antes de sumarlos.
+          const currentSubtotal = existingProduct.subtotal ?? 0;
+          const newSubtotal = product.subtotal ?? 0;
+          existingProduct.subtotal = currentSubtotal + newSubtotal;
+        } else {
+          // 4b. Si es la primera vez que vemos este producto, lo añadimos al mapa.
+          // Creamos una copia del objeto para no modificar los datos originales (inmutabilidad).
+          aggregatedProductsMap.set(product.id, { ...product });
+        }
+      }
+    }
+
+    // 5. Convertir los valores del mapa a un arreglo y devolver el resultado.
+    return Array.from(aggregatedProductsMap.values());
   }
 
   /* -------------------------------------------------------------------------- */

@@ -34,6 +34,7 @@ interface SalesViewModel {
   };
   isLoading: boolean;
   totalItems: number;
+  productList: Product[];
 }
 
 @Component({
@@ -99,6 +100,7 @@ export class SalesComponent implements OnInit {
           pagination: { isFirstPage: true, isLastPage: false },
           isLoading: true,
           totalItems: 0,
+          productList: [],
         };
 
         return this.salesService
@@ -112,6 +114,10 @@ export class SalesComponent implements OnInit {
               // 1. Aplanamos el array de pagos en uno solo
               const allPayments = result.sales.flatMap(
                 (sale) => sale.payment_method
+              );
+
+              const products = this.salesService.getAggregatedSoldProducts(
+                result.sales
               );
               const totalsByType = allPayments.reduce(
                 (accumulator, payment) => {
@@ -137,6 +143,7 @@ export class SalesComponent implements OnInit {
                 },
                 isLoading: false,
                 totalItems: result.sales.length,
+                productList: products,
               };
             }),
             // startWith emite el estado de carga INMEDIATAMENTE cuando este stream se activa
@@ -149,6 +156,7 @@ export class SalesComponent implements OnInit {
                 pagination: { isFirstPage: true, isLastPage: true },
                 isLoading: false,
                 totalItems: 0,
+                productList: [],
               });
             })
           );
