@@ -17,7 +17,7 @@ export class TicketService {
     const productList = data.products;
     const ticketData = {
       title: 'Ticket de venta',
-      logo: '',
+      logo: 'logo.png',
       barcode: '',
       qr: 'https://www.google.com.ar',
       products: productList,
