@@ -30,6 +30,9 @@ export class PaymentFactory {
       case 'nx':
         name = 'NaranjaX';
         break;
+      case 'cc':
+        name = 'Cuenta Corriente';
+        break;
       default:
         name = 'Otro';
         break;

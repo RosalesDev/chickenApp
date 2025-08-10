@@ -12,6 +12,7 @@ import {
   orderBy,
   query,
   QuerySnapshot,
+  serverTimestamp,
   setDoc,
   startAfter,
   updateDoc,
@@ -105,9 +106,51 @@ export class ProductService {
     return this.fuse?.search(query).map((result) => result.item) || [];
   }
   // Actualizar un producto
-  async updateProduct(id: string, product: Partial<Product>): Promise<void> {
-    const productRef = doc(this.firestore, 'products', id); // Referencia al documento
-    await updateDoc(productRef, product); // Actualiza los datos en Firestore
+  // async updateProduct(id: string, product: Partial<Product>): Promise<void> {
+  //   const productRef = doc(this.firestore, 'products', id); // Referencia al documento
+  //   await updateDoc(productRef, product); // Actualiza los datos en Firestore
+  // }
+  /**
+   * Actualiza un producto existente en Firestore.
+   *
+   * @param {string} id - El ID del documento del producto a actualizar.
+   * @param {Partial<Product>} productData - Un objeto con los campos del producto a actualizar.
+   * @returns {Promise<void>} Una promesa que se resuelve cuando la actualización es exitosa.
+   * @throws {Error} Lanza un error si el ID está vacío, no hay datos para actualizar o si falla la operación en Firestore.
+   */
+  async updateProduct(
+    id: string,
+    productData: Partial<Product>
+  ): Promise<void> {
+    // 1. Validación de entradas
+    if (!id) {
+      throw new Error('El ID del producto no puede estar vacío.');
+    }
+    if (!productData || Object.keys(productData).length === 0) {
+      console.warn(
+        'Se intentó actualizar un producto sin proporcionar datos. Operación cancelada.',
+        { id }
+      );
+      return; // Opcional: puedes lanzar un error si prefieres que esto no sea silencioso.
+    }
+
+    const productRef = doc(this.firestore, 'products', id);
+
+    // 2. Añadir metadatos (timestamp)
+    const dataToUpdate = {
+      ...productData,
+      updatedAt: serverTimestamp(), // ¡Buena práctica!
+    };
+
+    // 3. Manejo de errores con try/catch
+    try {
+      await updateDoc(productRef, dataToUpdate);
+      console.log(`Producto con ID: ${id} actualizado exitosamente.`);
+    } catch (error) {
+      console.error(`Error al actualizar el producto con ID: ${id}`, error);
+      // 4. Re-lanzar un error más específico para la capa superior
+      throw new Error('No se pudo actualizar el producto en la base de datos.');
+    }
   }
   // Eliminar producto
   async deleteProductById(id: string): Promise<void> {
@@ -170,13 +213,13 @@ export class ProductService {
     return {
       id: null,
       name: form.get('name')?.value,
-      pluCode: form.get('pluCode')?.value,
+      plu_code: form.get('pluCode')?.value,
       barcode: form.get('barcode')?.value,
       initials: form.get('initials')?.value,
-      availabilityInDeposit: form.get('availability_in_deposit')?.value,
-      priceByUnit: form.get('price_by_unit')?.value,
-      priceByKg: form.get('price_by_kg')?.value,
-      isWeighed: form.get('is_weighed')?.value,
+      availability_in_deposit: form.get('availability_in_deposit')?.value,
+      price_by_unit: form.get('price_by_unit')?.value,
+      price_by_kg: form.get('price_by_kg')?.value,
+      is_weighed: form.get('is_weighed')?.value,
       quantity: 0,
       is_local: !form.get('is_visible_in_app')?.value,
     };

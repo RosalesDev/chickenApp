@@ -1,4 +1,4 @@
-export type PaymentType = 'cash' | 'mp' | 'brubank' | 'nx';
+export type PaymentType = 'cash' | 'mp' | 'brubank' | 'nx' | 'cc';
 
 export interface PaymentMethod {
   type: string;

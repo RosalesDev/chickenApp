@@ -73,14 +73,14 @@ export class PosComponent {
           if (product.priceType) {
             acumulated +=
               product.priceType === 'unit'
-                ? product.priceByUnit! * product.quantity
-                : product.priceByKg! * product.quantity;
+                ? product.price_by_unit! * product.quantity
+                : product.price_by_kg! * product.quantity;
           } else {
-            product.isWeighed
-              ? product.priceByKg! * product.quantity
-              : (acumulated += product.priceByUnit! * product.quantity);
-            if (!product.priceByUnit) {
-              acumulated += product?.priceByKg! * product!.quantity;
+            product.is_weighed
+              ? product.price_by_kg! * product.quantity
+              : (acumulated += product.price_by_unit! * product.quantity);
+            if (!product.price_by_unit) {
+              acumulated += product?.price_by_kg! * product!.quantity;
             }
           }
         }
@@ -179,7 +179,7 @@ export class PosComponent {
         // Incrementa la cantidad si el producto ya existe en la lista
         foundProductInSale.quantity++;
         foundProductInSale.subtotal =
-          foundProductInSale.quantity * foundProductInSale.priceByUnit!;
+          foundProductInSale.quantity * foundProductInSale.price_by_unit!;
         this.productToSaleList.update((products) =>
           products.map((product) =>
             product.barcode === inputValue ? foundProductInSale : product
@@ -196,7 +196,7 @@ export class PosComponent {
           inputType = 'PLU';
           const pluCode: string = inputValue.slice(1, 6);
           const foundProductInSale = this.productToSaleList().find(
-            (product) => product.pluCode === pluCode
+            (product) => product.plu_code === pluCode
           );
           if (foundProductInSale) {
             foundProductInSale.quantity++;
@@ -204,7 +204,7 @@ export class PosComponent {
               foundProductInSale.quantity * foundProductInSale.amount_to_pay!;
             this.productToSaleList.update((products) =>
               products.map((product) =>
-                product.pluCode === pluCode ? foundProductInSale : product
+                product.plu_code === pluCode ? foundProductInSale : product
               )
             );
             this.hideLoadingModal(); // Oculta el modal
@@ -272,7 +272,7 @@ export class PosComponent {
     }
   }
   async determinePriceType(foundProduct: Product) {
-    if (foundProduct.priceByUnit && foundProduct.priceByKg) {
+    if (foundProduct.price_by_unit && foundProduct.price_by_kg) {
       const priceType = await this.promptPriceTypeSelection(foundProduct);
 
       if (!priceType) {
@@ -286,29 +286,29 @@ export class PosComponent {
         quantity: 1,
         price:
           priceType === 'unit'
-            ? foundProduct.priceByUnit
-            : foundProduct.priceByKg,
+            ? foundProduct.price_by_unit
+            : foundProduct.price_by_kg,
         priceType, // para guardar cuál se eligió
       };
       this.productToSaleList.update((products) => [...products, newProduct]);
     } else {
-      if (foundProduct.priceByUnit) {
+      if (foundProduct.price_by_unit) {
         const newProduct = {
           ...foundProduct,
           quantity: 1, // Inicializa la cantidad en 1
-          price: foundProduct.priceByUnit,
+          price: foundProduct.price_by_unit,
           priceType: 'unit',
-          subtotal: foundProduct.priceByUnit,
+          subtotal: foundProduct.price_by_unit,
         };
         this.productToSaleList.update((products) => [...products, newProduct]);
       }
-      if (foundProduct.priceByKg) {
+      if (foundProduct.price_by_kg) {
         const newProduct = {
           ...foundProduct,
           quantity: 1, // Inicializa la cantidad en 1
-          price: foundProduct.priceByKg,
+          price: foundProduct.price_by_kg,
           priceType: 'kilo',
-          subtotal: foundProduct.priceByKg,
+          subtotal: foundProduct.price_by_kg,
         };
         this.productToSaleList.update((products) => [...products, newProduct]);
       }
@@ -353,44 +353,54 @@ export class PosComponent {
     this.showFilteredProducts.set(false);
     input.value = '';
 
-    Swal.fire({
-      title: 'Seleccionar Tipo de Venta',
-      html: `
+    if (!item.price_by_kg && item.price_by_unit) {
+      this.showUnitProductAlert(item);
+    }
+
+    if (!item.price_by_unit && item.price_by_kg) {
+      this.showWeighableProductAlert(item);
+    }
+
+    if (item.price_by_kg && item.price_by_unit) {
+      Swal.fire({
+        title: 'Seleccionar Tipo de Venta',
+        html: `
         <div style="display: flex; justify-content: center; gap: 1rem;">
             <input type="radio" id="kilo" name="tipoVenta" value="kilo" checked>
             <label for="kilo">Por Kilo</label>
             <input type="radio" id="unidad" name="tipoVenta" value="unit">
             <label for="unidad">Por Unidad</label>
         </div>`,
-      confirmButtonText: 'Aceptar',
-      focusConfirm: false,
-      preConfirm: () => {
-        // Obtiene el valor del radio button seleccionado
-        const tipoVenta = (
-          Swal.getPopup()!.querySelector(
-            'input[name="tipoVenta"]:checked'
-          ) as HTMLInputElement | null
-        )?.value;
-        if (!tipoVenta) {
-          Swal.showValidationMessage(`Por favor, selecciona una opción`);
-          return false;
-        }
-        return tipoVenta;
-      },
-    }).then((result) => {
-      // Si el usuario presionó "Aceptar" y la validación fue exitosa
-      if (result.isConfirmed) {
-        const tipoSeleccionado = result.value; // 'kilo' o 'unit'
+        confirmButtonText: 'Aceptar',
+        focusConfirm: false,
+        preConfirm: () => {
+          // Obtiene el valor del radio button seleccionado
+          const tipoVenta = (
+            Swal.getPopup()!.querySelector(
+              'input[name="tipoVenta"]:checked'
+            ) as HTMLInputElement | null
+          )?.value;
+          if (!tipoVenta) {
+            Swal.showValidationMessage(`Por favor, selecciona una opción`);
+            return false;
+          }
+          return tipoVenta;
+        },
+      }).then((result) => {
+        // Si el usuario presionó "Aceptar" y la validación fue exitosa
+        if (result.isConfirmed) {
+          const tipoSeleccionado = result.value; // 'kilo' o 'unit'
 
-        console.log('El usuario seleccionó:', tipoSeleccionado);
+          console.log('El usuario seleccionó:', tipoSeleccionado);
 
-        if (tipoSeleccionado === 'kilo') {
-          this.showWeighableProductAlert(item);
-        } else {
-          this.showUnitProductAlert(item);
+          if (tipoSeleccionado === 'kilo') {
+            this.showWeighableProductAlert(item);
+          } else {
+            this.showUnitProductAlert(item);
+          }
         }
-      }
-    });
+      });
+    }
   }
   /**
    * * Muestra un modal para agregar un producto por unidad.
@@ -401,7 +411,7 @@ export class PosComponent {
     Swal.fire({
       title: product.name,
       html: `
-        <p class="mb-2">Precio unitario: <strong>${product.priceByUnit?.toLocaleString(
+        <p class="mb-2">Precio unitario: <strong>${product.price_by_unit?.toLocaleString(
           'es-AR',
           { style: 'currency', currency: 'ARS' }
         )}</strong></p>
@@ -409,7 +419,7 @@ export class PosComponent {
         <div class="swal2-input-container">
           <label for="swal-input-quantity" class="form-label">Cantidad:</label>
           <input id="swal-input-quantity" class="swal2-input" type="number" value="1" min="1" step="1">
-          <h3 class="mt-4">Subtotal: <strong id="subtotal-display">${product.priceByUnit?.toLocaleString(
+          <h3 class="mt-4">Subtotal: <strong id="subtotal-display">${product.price_by_unit?.toLocaleString(
             'es-AR',
             { style: 'currency', currency: 'ARS' }
           )}</strong></h3>
@@ -426,7 +436,7 @@ export class PosComponent {
         quantityInput.focus();
         quantityInput.oninput = () => {
           const quantity = parseInt(quantityInput.value, 10) || 0;
-          const subtotal = quantity * product.priceByUnit!;
+          const subtotal = quantity * product.price_by_unit!;
           const subtotalDisplay = document.getElementById('subtotal-display')!;
           subtotalDisplay.innerText = subtotal.toLocaleString('es-AR', {
             style: 'currency',
@@ -453,7 +463,7 @@ export class PosComponent {
           ...product,
           priceType: 'unit',
           quantity: result.value,
-          subtotal: result.value * product.priceByUnit!,
+          subtotal: result.value * product.price_by_unit!,
         };
         this.addProductToList(productToAdd);
       }
@@ -465,7 +475,7 @@ export class PosComponent {
     Swal.fire({
       title: product.name,
       html: `
-        <p class="mb-2">Precio por Kilo: <strong>${product.priceByKg?.toLocaleString(
+        <p class="mb-2">Precio por Kilo: <strong>${product.price_by_kg?.toLocaleString(
           'es-AR',
           { style: 'currency', currency: 'ARS' }
         )}/Kg.</strong></p>
@@ -486,7 +496,7 @@ export class PosComponent {
         weightInput.focus();
         weightInput.oninput = () => {
           const weightInGrams = parseInt(weightInput.value, 10) || 0;
-          const subtotal = (weightInGrams / 1000) * product.priceByKg!;
+          const subtotal = (weightInGrams / 1000) * product.price_by_kg!;
           const subtotalDisplay = document.getElementById('subtotal-display')!;
           subtotalDisplay.innerText = subtotal.toLocaleString('es-AR', {
             style: 'currency',
@@ -514,7 +524,7 @@ export class PosComponent {
           ...product,
           priceType: 'kilo',
           quantity: weightInKg, // Guardamos la cantidad en Kg
-          subtotal: weightInKg * product.priceByKg!,
+          subtotal: weightInKg * product.price_by_kg!,
         };
         this.addProductToList(productToAdd);
       }
@@ -524,7 +534,7 @@ export class PosComponent {
   private addProductToList(productToAdd: Product): void {
     // Esta función no necesita cambios, maneja la lógica de agregar a la lista.
     const existingProduct = this.productToSaleList().find(
-      (p) => p.id === productToAdd.id && !p.isWeighed
+      (p) => p.id === productToAdd.id && !p.is_weighed
     );
 
     if (existingProduct) {

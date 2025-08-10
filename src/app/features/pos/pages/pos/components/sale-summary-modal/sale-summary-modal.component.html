@@ -72,6 +72,8 @@
               >
                 <option value="cash">Efectivo</option>
                 <option value="mp">MercadoPago</option>
+                <option value="nx">NaranjaX</option>
+                <option value="cc">Cuenta Corriente</option>
                 <option value="other">Otro</option>
               </select>
               <div class="my-auto">$</div>
@@ -128,6 +130,20 @@
                   (click)="addTotalPayment('mp')"
                 >
                   Total por MercadoPago
+                </button>
+              </div>
+              }
+            </div>
+            <div class="row justify-content-end mt-1">
+              @if(payments.length === 0){
+              <div class="col-6">
+                <button
+                  class="btn w-100"
+                  style="background-color: rgb(70, 157, 220); color: white"
+                  type="button"
+                  (click)="addTotalPayment('cc')"
+                >
+                  Total en Cta. Corriente
                 </button>
               </div>
               }

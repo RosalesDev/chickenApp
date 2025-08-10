@@ -19,17 +19,20 @@
       <tbody>
         @for(product of products; track product.id){
         <tr class="text-center">
-          <td>{{ product.pluCode }}</td>
+          <td>{{ product.plu_code }}</td>
           <td>{{ product.barcode }}</td>
           <td>{{ product.initials }}</td>
           <td>{{ product.name.toUpperCase() }}</td>
-          <td>{{ product.availabilityInDeposit }}</td>
-          <td>${{ product.priceByUnit }}</td>
-          <td>${{ product.priceByKg }}</td>
+          <td>{{ product.availability_in_deposit }}</td>
+          <td>${{ product.price_by_unit }}</td>
+          <td>${{ product.price_by_kg }}</td>
           <td *hasRole="'ADMIN'">
             <div class="row gx-0">
               <div class="col">
-                <button class="btn btn-info btn-sm opacity-75">
+                <button
+                  class="btn btn-info btn-sm opacity-75"
+                  (click)="openEditModal(product)"
+                >
                   <i class="bi bi-pencil"></i>
                 </button>
               </div>

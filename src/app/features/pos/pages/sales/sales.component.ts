@@ -23,6 +23,7 @@ import { SaleDto } from '../../../../core/dtos/SaleDto';
 import { CommonModule } from '@angular/common';
 import { Product } from '../../../../core/models/product-model';
 import { PaymentMethod } from '../../../../core/models/paymentMethod-model';
+import { TicketService } from '../../services/ticket.service';
 
 // Define la "forma" de todo el estado que necesita nuestra vista.
 interface SalesViewModel {
@@ -45,6 +46,7 @@ interface SalesViewModel {
 })
 export class SalesComponent implements OnInit {
   private salesService = inject(SaleService);
+  public ticketService = inject(TicketService);
   private fb = inject(FormBuilder);
 
   // --- Disparadores de Estado (Triggers) ---
@@ -179,6 +181,52 @@ export class SalesComponent implements OnInit {
       acc[payment.name] = (acc[payment.name] || 0) + payment.amount;
       return acc;
     }, {} as { [key: string]: number });
+  }
+
+  /**
+   * Calcula la suma total de los montos de todos los métodos de pago
+   * a través de una lista de ventas.
+   * @param sales La lista de ventas (SaleDto[]).
+   * @returns La suma total como un número.
+   */
+  public calculateTotalFromPaymentMethods(sales: SaleDto[]): number {
+    // Usamos reduce para acumular el total de las ventas.
+    return sales.reduce((totalAccumulator, currentSale) => {
+      // Para cada venta, sumamos los montos de su lista de métodos de pago.
+      const salePaymentTotal = currentSale.payment_method.reduce(
+        (paymentAccumulator, paymentMethod) => {
+          return paymentAccumulator + paymentMethod.amount;
+        },
+        0
+      ); // El 0 es el valor inicial del acumulador de pagos.
+
+      // Sumamos el total de pagos de la venta actual al acumulador general.
+      return totalAccumulator + salePaymentTotal;
+    }, 0); // El 0 es el valor inicial del acumulador total.
+  }
+
+  /**
+   * Calcula la suma total de los descuentos aplicados en una lista de ventas.
+   * @param sales La lista de ventas (SaleDto[]).
+   * @returns La suma total de los descuentos como un número.
+   */
+  public calculateTotalDiscounts(sales: SaleDto[]): number {
+    // Usamos reduce para acumular la suma de los descuentos de cada venta.
+    return sales.reduce((totalDiscount, currentSale) => {
+      return totalDiscount + currentSale.discount;
+    }, 0); // El 0 es el valor inicial del acumulador.
+  }
+
+  /**
+   * Calcula la suma total de los descuentos aplicados en una lista de ventas.
+   * @param sales La lista de ventas (SaleDto[]).
+   * @returns La suma total de los descuentos como un número.
+   */
+  public calculateTotalWithoutDiscount(products: Product[]): number {
+    // Usamos reduce para acumular la suma de los descuentos de cada venta.
+    return products.reduce((total, currentProduct) => {
+      return total + currentProduct.subtotal!;
+    }, 0); // El 0 es el valor inicial del acumulador.
   }
 
   loadTodaysSales(): void {

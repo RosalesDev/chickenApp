@@ -27,8 +27,8 @@
           role="button"
           (click)="selectProduct(product, barcodeInput)"
         >
-          {{ product.name }} - {{ product.priceByKg | currency }}/Kg. -
-          {{ product.priceByUnit | currency }}
+          {{ product.name }} - {{ product.price_by_kg | currency }}/Kg. -
+          {{ product.price_by_unit | currency }}
         </li>
         }
       </ul>
@@ -54,29 +54,29 @@
           <tr [@fadeOutAnimation] class="text-center">
             <td>{{ product.name | uppercase }}</td>
             <td>
-              {{ product.barcode != "" ? product.barcode : product.pluCode }}
+              {{ product.barcode != "" ? product.barcode : product.plu_code }}
             </td>
             <td [@quantityAnimation]="product.quantity">
               {{ product.quantity }}
             </td>
-            <td>{{ product.priceByUnit | currency }}</td>
-            <td>{{ product.priceByKg | currency }}</td>
+            <td>{{ product.price_by_unit | currency }}</td>
+            <td>{{ product.price_by_kg | currency }}</td>
             @if(product.amount_to_pay && product.amount_to_pay > 0){
             <td>{{ product.amount_to_pay | currency }}</td>
             }@else { @if(product.priceType){
             <td>
               {{
                 product.priceType === "unit"
-                  ? (product.priceByUnit! * product.quantity | currency)
-                  : (product.priceByKg! * product.quantity | currency)
+                  ? (product.price_by_unit! * product.quantity | currency)
+                  : (product.price_by_kg! * product.quantity | currency)
               }}
             </td>
             }@else {
             <td>
               {{
-                product.priceByUnit != 0
-                  ? (product.priceByUnit! * product.quantity | currency)
-                  : (product.priceByKg! * product.quantity | currency)
+                product.price_by_unit != 0
+                  ? (product.price_by_unit! * product.quantity | currency)
+                  : (product.price_by_kg! * product.quantity | currency)
               }}
             </td>
             } }

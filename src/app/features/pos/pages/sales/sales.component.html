@@ -127,10 +127,10 @@
                     <tr>
                       <td>{{ product.name }}</td>
                       <td class="text-center">
-                        @if(product.isWeighed){
-                        {{ product.priceByKg | currency : "ARS" : "$" }}
+                        @if(product.is_weighed){
+                        {{ product.price_by_kg | currency : "ARS" : "$" }}
                         } @else {
-                        {{ product.priceByUnit | currency : "ARS" : "$" }}
+                        {{ product.price_by_unit | currency : "ARS" : "$" }}
                         }
                       </td>
                       <td class="text-center">{{ product.quantity }}</td>
@@ -140,6 +140,37 @@
                     </tr>
                     }
                   </tbody>
+                  <tfoot>
+                    <tr>
+                      <th colspan="3" class="text-end">Total:</th>
+                      <th class="text-center text-success">
+                        {{
+                          calculateTotalWithoutDiscount(vm.productList)
+                            | currency : "ARS" : "$"
+                        }}
+                      </th>
+                    </tr>
+                    @if(calculateTotalDiscounts(vm.sales) > 0){
+                    <tr>
+                      <th colspan="3" class="text-end">Descuentos:</th>
+                      <th class="text-center text-danger">
+                        {{
+                          calculateTotalDiscounts(vm.sales)
+                            | currency : "ARS" : "$"
+                        }}
+                      </th>
+                    </tr>
+                    <tr>
+                      <th colspan="3" class="text-end">Total c/des.:</th>
+                      <th class="text-center text-danger">
+                        {{
+                          calculateTotalFromPaymentMethods(vm.sales)
+                            | currency : "ARS" : "$"
+                        }}
+                      </th>
+                    </tr>
+                    }
+                  </tfoot>
                 </table>
               </div>
             </div>
@@ -169,6 +200,25 @@
             Detalle de Venta {{ sale.date_created | date : "dd/MM/yy HH:mm" }}
           </h6>
           <button
+            class="btn btn-info"
+            data-bs-toggle="tooltip"
+            data-bs-placement="top"
+            title="Reimprimir Ticket"
+            (click)="
+              ticketService.printTicket(
+                {
+                  products: sale.products_list,
+                  total: sale.total
+                },
+                sale.payment_method,
+                sale.discount,
+                sale.date_created!
+              )
+            "
+          >
+            <i class="bi bi-printer-fill"></i>
+          </button>
+          <button
             class="btn btn-sm btn-outline-secondary"
             (click)="selectSale(null)"
           >
@@ -187,14 +237,14 @@
             >
               <div>
                 <strong>{{ item.name }}</strong>
-                @if(item.priceByKg){
+                @if(item.price_by_kg){
                 <small class="text-muted d-block"
-                  >$/Kg.: {{ item.priceByKg | currency : "ARS" : "$" }}</small
+                  >$/Kg.: {{ item.price_by_kg | currency : "ARS" : "$" }}</small
                 >
-                } @if(item.priceByUnit){
+                } @if(item.price_by_unit){
                 <small class="text-muted d-block"
                   >$/Uni.:
-                  {{ item.priceByUnit | currency : "ARS" : "$" }}</small
+                  {{ item.price_by_unit | currency : "ARS" : "$" }}</small
                 >}
                 <small class="text-muted d-block"
                   >Cant: {{ item.quantity }}</small
@@ -208,6 +258,12 @@
                 <small class="text-muted d-block"
                   >Subtotal: {{ item.subtotal | currency : "ARS" : "$" }}</small
                 >
+                @if(sale.discount > 0){
+                <small class="text-muted d-block"
+                  >Descuento:
+                  {{ sale.discount | currency : "ARS" : "$" }}</small
+                >
+                }
               </div>
             </li>
             }

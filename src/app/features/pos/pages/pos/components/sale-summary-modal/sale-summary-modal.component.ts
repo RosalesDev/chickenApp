@@ -84,6 +84,11 @@ export class SaleSummaryModalComponent {
 
   setPaymentAmount(event: Event, index: number) {
     const input = event.target as HTMLInputElement;
+    const inputValue = Number(input.value);
+    if (inputValue <= 0) {
+      this.payments[index].amount = 0;
+      this.updatePaymentSum();
+    }
     switch (this.payments[index].type) {
       case 'cash':
         this.payments[index].name = 'Efectivo';
@@ -96,6 +101,9 @@ export class SaleSummaryModalComponent {
         break;
       case 'nx':
         this.payments[index].name = 'NaranjaX';
+        break;
+      case 'cc':
+        this.payments[index].name = 'Cuenta Corriente';
         break;
       default:
         this.payments[index].name = 'Otro';

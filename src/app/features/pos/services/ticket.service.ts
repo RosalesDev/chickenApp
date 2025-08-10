@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Product } from '../../../core/models/product-model';
 import { PaymentMethod } from '../../../core/models/paymentMethod-model';
+import { parseISO, format } from 'date-fns';
 
 @Injectable({
   providedIn: 'root',
@@ -11,17 +12,20 @@ export class TicketService {
   async printTicket(
     data: { products: Product[]; total: number },
     payments: PaymentMethod[],
-    discount: number = 0
+    discount: number = 0,
+    saleDate: string = new Date().toISOString()
   ) {
     const url = 'http://localhost:3000/print';
     const productList = data.products;
+    const dateObject = parseISO(saleDate);
     const ticketData = {
       title: 'Ticket de venta',
       logo: 'logo.png',
       barcode: '',
       qr: 'https://www.google.com.ar',
       products: productList,
-      date: new Date().toLocaleString(),
+      date: format(dateObject, 'dd/MM/yyyy HH:mm:ss'),
+      // date: new Date().toLocaleString(),
       total: data.total,
       payments: payments,
       discount: discount,
