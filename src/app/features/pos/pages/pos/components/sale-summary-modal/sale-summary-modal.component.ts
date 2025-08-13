@@ -199,17 +199,33 @@ export class SaleSummaryModalComponent {
           return;
         }
         Swal.fire({
+          title: '¡Venta Finalizada!',
+          text: '¿Deseas imprimir el ticket?',
           icon: 'success',
-          title: 'Venta finalizada',
-          text: 'Venta guardada',
-          showConfirmButton: false,
-          timer: 1500,
+          showCancelButton: true,
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          confirmButtonText: 'Sí, imprimir',
+          cancelButtonText: 'No',
+          allowOutsideClick: false,
+        }).then((result) => {
+          // Si el usuario hizo clic en el botón "Sí, imprimir"
+          if (result.isConfirmed) {
+            this.ticketService.printTicket(
+              this.saleSummary(),
+              Array.from(this.payments),
+              this.discount()
+            );
+            // Opcional: Muestra una pequeña notificación de que se está imprimiendo.
+            Swal.fire({
+              icon: 'info',
+              title: 'Imprimiendo ticket...',
+              showConfirmButton: false,
+              timer: 1500,
+            });
+          }
+          this.notifyFocusBarcodeInput(); // Emitir el evento para enfocar el input de código de barras
         });
-        this.ticketService.printTicket(
-          this.saleSummary(),
-          Array.from(this.payments),
-          this.discount()
-        );
         this.notifyFocusBarcodeInput(); // Emitir el evento para enfocar el input de código de barras
         this.notifyParent(); // Emitir el evento para limpiar la venta
         this.resetTotalToPay();
