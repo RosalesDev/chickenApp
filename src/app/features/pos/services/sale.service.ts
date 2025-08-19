@@ -13,6 +13,7 @@ import {
   orderBy,
   query,
   Query,
+  QueryDocumentSnapshot,
   runTransaction,
   serverTimestamp,
   startAfter,
@@ -21,7 +22,7 @@ import {
   where,
 } from 'firebase/firestore';
 import { SaleDto, SalesFilters } from '../../../core/dtos/SaleDto';
-import { from, map, Observable } from 'rxjs';
+import { from, map, Observable, throwError } from 'rxjs';
 import { Product } from '../../../core/models/product-model';
 
 export interface PaginatedSalesResult {
@@ -40,6 +41,72 @@ export class SaleService {
   private salesCollection = collection(this.firestore, 'sales');
   private productsCollection = collection(this.firestore, 'products');
   readonly PAGE_SIZE = 5; // Define el tamaño de la página aquí
+  // Define el rango máximo de días permitidos para la consulta.
+  private readonly MAX_DATE_RANGE_IN_DAYS = 90;
+
+  /**
+   * Mapea un DocumentSnapshot de Firestore a un objeto SaleDto.
+   */
+  private mapDocToSaleDto(doc: QueryDocumentSnapshot<DocumentData>): SaleDto {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      balance_after_sale: data['balance_after_sale'] || 0,
+      balance_before_sale: data['balance_before_sale'] || 0,
+      cash_installment: data['cash_installment'] || 0,
+      customer_id: data['customer_id'] || '',
+      customer_name: data['customer_name'] || '',
+      // Convierte el Timestamp de Firestore a un string ISO, o null si no existe
+      date_created:
+        (data['date_created'] as Timestamp)?.toDate().toISOString() || null,
+      date_modified:
+        (data['date_modified'] as Timestamp)?.toDate().toISOString() || null,
+      discount: data['discount'] || 0,
+      mp_installment: data['mp_installment'] || 0,
+      payment_method: data['payment_method'] || [],
+      products_list: data['products_list'] || [],
+      status: data['status'] || 'unknown',
+      total: data['total'] || 0,
+      user_seller: data['user_seller'] || null, // Asegúrate que el tipo User coincida
+      is_local_sale: data['is_local_sale'] || false, // Asegúrate que el tipo booleano coincida
+    };
+  }
+
+  /**
+   * Obtiene todas las ventas dentro de un rango de fechas específico.
+   * Lanza un error si el rango de fechas excede el máximo permitido.
+   * @param startDate - La fecha de inicio del rango.
+   * @param endDate - La fecha de fin del rango.
+   * @returns Un Observable que emite un array de ventas (SaleDto[]).
+   */
+  getSalesByDateRange(filters: SalesFilters): Observable<SaleDto[]> {
+    // 1. 🛡️ **Validación del Rango de Fechas**
+    const diffInMs = filters.endDate!.getTime() - filters.startDate!.getTime();
+    const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+
+    if (diffInDays > this.MAX_DATE_RANGE_IN_DAYS) {
+      // Usamos throwError de RxJS para manejar el error de forma reactiva.
+      return throwError(
+        () =>
+          new Error(
+            `El rango de fechas excede el máximo permitido de ${this.MAX_DATE_RANGE_IN_DAYS} días.`
+          )
+      );
+    }
+
+    let q = this.buildFilteredQuery(filters);
+
+    return from(getDocs(q)).pipe(
+      map((snapshot) => {
+        // Mapeamos cada documento al DTO 'SaleDto'
+        return snapshot.docs.map((doc) => {
+          const data = doc.data();
+          const saleDto: SaleDto = this.mapDocToSaleDto(doc);
+          return saleDto;
+        });
+      })
+    );
+  }
 
   /* -------------------------------------------------------------------------- */
   /*                    OBTENER VENTAS PAGINADAS Y FILTRADAS                    */
@@ -90,32 +157,7 @@ export class SaleService {
           const data = doc.data();
           console.log(`Sale data for doc ${doc.id}:`, data);
 
-          // ---- INICIO DEL MAPEO A SaleDto ----
-          const saleDto: SaleDto = {
-            id: doc.id,
-            balance_after_sale: data['balance_after_sale'] || 0,
-            balance_before_sale: data['balance_before_sale'] || 0,
-            cash_installment: data['cash_installment'] || 0,
-            customer_id: data['customer_id'] || '',
-            customer_name: data['customer_name'] || '',
-            // Convierte el Timestamp de Firestore a un string ISO, o null si no existe
-            date_created:
-              (data['date_created'] as Timestamp)?.toDate().toISOString() ||
-              null,
-            date_modified:
-              (data['date_modified'] as Timestamp)?.toDate().toISOString() ||
-              null,
-            discount: data['discount'] || 0,
-            mp_installment: data['mp_installment'] || 0,
-            payment_method: data['payment_method'] || [],
-            products_list: data['products_list'] || [],
-            status: data['status'] || 'unknown',
-            total: data['total'] || 0,
-            user_seller: data['user_seller'] || null, // Asegúrate que el tipo User coincida
-            is_local_sale: data['is_local_sale'] || false, // Asegúrate que el tipo booleano coincida
-          };
-          // ---- FIN DEL MAPEO ----
-
+          const saleDto: SaleDto = this.mapDocToSaleDto(doc);
           return saleDto;
         });
         console.log(`Mapped sales:`, sales);

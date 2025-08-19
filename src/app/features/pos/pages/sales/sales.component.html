@@ -67,7 +67,10 @@
             Listado de ventas ( {{ vm.totalItems }} resultados )
           </h6>
         </div>
-        <div class="list-group list-group-flush">
+        <div
+          class="list-group list-group-flush"
+          style="max-height: 500px; overflow-y: auto"
+        >
           @for (sale of vm.sales; track sale.id) {
           <button
             type="button"
@@ -89,18 +92,6 @@
           </button>
           }
         </div>
-        @if (!vm.pagination.isFirstPage || !vm.pagination.isLastPage) {
-        <nav class="d-flex justify-content-center mt-4">
-          <ul class="pagination shadow-sm">
-            <li class="page-item" [class.disabled]="vm.pagination.isFirstPage">
-              <button class="page-link" (click)="prevPage()">Anterior</button>
-            </li>
-            <li class="page-item" [class.disabled]="vm.pagination.isLastPage">
-              <button class="page-link" (click)="nextPage()">Siguiente</button>
-            </li>
-          </ul>
-        </nav>
-        }
       </div>
     </div>
 

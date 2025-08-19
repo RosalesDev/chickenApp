@@ -104,68 +104,108 @@ export class SalesComponent implements OnInit {
           totalItems: 0,
           productList: [],
         };
+        return this.salesService.getSalesByDateRange(filters).pipe(
+          map((result) => {
+            const allPayments = result.flatMap((sale) => sale.payment_method);
+            const products =
+              this.salesService.getAggregatedSoldProducts(result);
+            const totalsByType = allPayments.reduce((accumulator, payment) => {
+              const { name, amount } = payment;
+              // Si el tipo no existe en el acumulador, lo inicializa en 0, luego suma.
+              accumulator[name] = (accumulator[name] || 0) + amount;
+              return accumulator;
+            }, {} as { [key: string]: number });
 
-        return this.salesService
-          .getSalesPaginated(filters, pagination.direction, pagination.cursor)
-          .pipe(
-            // El operador 'map' transforma el resultado del servicio en nuestro ViewModel
-            map((result) => {
-              // Actualizamos los cursores para la próxima paginación
-              this.firstVisible = result.firstVisible;
-              this.lastVisible = result.lastVisible;
-              // 1. Aplanamos el array de pagos en uno solo
-              const allPayments = result.sales.flatMap(
-                (sale) => sale.payment_method
-              );
-
-              const products = this.salesService.getAggregatedSoldProducts(
-                result.sales
-              );
-              const totalsByType = allPayments.reduce(
-                (accumulator, payment) => {
-                  const { name, amount } = payment;
-                  // Si el tipo no existe en el acumulador, lo inicializa en 0, luego suma.
-                  accumulator[name] = (accumulator[name] || 0) + amount;
-                  return accumulator;
-                },
-                {} as { [key: string]: number }
-              );
-
-              console.log('totalsByType:', totalsByType);
-              // Devolvemos el objeto completo que la vista necesita
-              return {
-                sales: result.sales,
-                totalsByType: totalsByType,
-                pagination: {
-                  isFirstPage:
-                    pagination.direction === 'initial' ||
-                    pagination.cursor === null ||
-                    this.cursorStack.length === 0,
-                  isLastPage: result.sales.length < this.salesService.PAGE_SIZE,
-                },
-                isLoading: false,
-                totalItems: result.sales.length,
-                productList: products,
-              };
-            }),
-            // startWith emite el estado de carga INMEDIATAMENTE cuando este stream se activa
-            startWith(initialLoadingState),
-            // catchError también debe devolver un objeto del tipo ViewModel
-            catchError(() => {
-              return of({
-                sales: [],
-                totalsByType: {},
-                pagination: { isFirstPage: true, isLastPage: true },
-                isLoading: false,
-                totalItems: 0,
-                productList: [],
-              });
-            })
-          );
+            return {
+              sales: result,
+              totalsByType: totalsByType,
+              pagination: {
+                isFirstPage: true,
+                isLastPage: true,
+              },
+              isLoading: false,
+              totalItems: result.length,
+              productList: products,
+            };
+          }),
+          startWith(initialLoadingState),
+          catchError(() => {
+            return of({
+              sales: [],
+              totalsByType: {},
+              pagination: { isFirstPage: true, isLastPage: true },
+              isLoading: false,
+              totalItems: 0,
+              productList: [],
+            });
+          })
+        );
       }),
       // shareReplay(1) es crucial para evitar múltiples suscripciones si usas `vm$ | async` varias veces
       shareReplay(1)
     );
+
+    // return this.salesService
+    //   .getSalesPaginated(filters, pagination.direction, pagination.cursor)
+    //   .pipe(
+    //     // El operador 'map' transforma el resultado del servicio en nuestro ViewModel
+    //     map((result) => {
+    //       // Actualizamos los cursores para la próxima paginación
+    //       this.firstVisible = result.firstVisible;
+    //       this.lastVisible = result.lastVisible;
+    //       // 1. Aplanamos el array de pagos en uno solo
+    //       const allPayments = result.sales.flatMap(
+    //         (sale) => sale.payment_method
+    //       );
+
+    //       const products = this.salesService.getAggregatedSoldProducts(
+    //         result.sales
+    //       );
+    //       const totalsByType = allPayments.reduce(
+    //         (accumulator, payment) => {
+    //           const { name, amount } = payment;
+    //           // Si el tipo no existe en el acumulador, lo inicializa en 0, luego suma.
+    //           accumulator[name] = (accumulator[name] || 0) + amount;
+    //           return accumulator;
+    //         },
+    //         {} as { [key: string]: number }
+    //       );
+
+    //       console.log('totalsByType:', totalsByType);
+    //       // Devolvemos el objeto completo que la vista necesita
+    //       return {
+    //         sales: result.sales,
+    //         totalsByType: totalsByType,
+    //         pagination: {
+    //           isFirstPage:
+    //             pagination.direction === 'initial' ||
+    //             pagination.cursor === null ||
+    //             this.cursorStack.length === 0,
+    //           isLastPage: result.sales.length < this.salesService.PAGE_SIZE,
+    //         },
+    //         isLoading: false,
+    //         totalItems: result.sales.length,
+    //         productList: products,
+    //       };
+    //     }),
+    //     // startWith emite el estado de carga INMEDIATAMENTE cuando este stream se activa
+    //     startWith(initialLoadingState),
+    //     // catchError también debe devolver un objeto del tipo ViewModel
+    //     catchError(() => {
+    //       return of({
+    //         sales: [],
+    //         totalsByType: {},
+    //         pagination: { isFirstPage: true, isLastPage: true },
+    //         isLoading: false,
+    //         totalItems: 0,
+    //         productList: [],
+    //       });
+    //     })
+    //   );
+    //   }),
+    //   // shareReplay(1) es crucial para evitar múltiples suscripciones si usas `vm$ | async` varias veces
+    //   shareReplay(1)
+    // );
 
     this.loadTodaysSales();
   }
