@@ -269,6 +269,22 @@ export class SalesComponent implements OnInit {
     }, 0); // El 0 es el valor inicial del acumulador.
   }
 
+  /**
+   * Calcula el total con los descuentos aplicados en las ventas.
+   * @param sales La lista de ventas (SaleDto[]).
+   * @returns La suma total de los descuentos como un número.
+   */
+  public calculateTotalWithDiscount(
+    sales: SaleDto[],
+    products: Product[]
+  ): number {
+    // Usamos reduce para acumular la suma de los descuentos de cada venta.
+    return (
+      this.calculateTotalWithoutDiscount(products) -
+      this.calculateTotalDiscounts(sales)
+    );
+  }
+
   loadTodaysSales(): void {
     this.cursorStack = [];
     const start = new Date();

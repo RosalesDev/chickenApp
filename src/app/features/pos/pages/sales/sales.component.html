@@ -61,7 +61,7 @@
   } @else { @if (vm.sales.length > 0) {
   <div class="row justify-content-center">
     <div class="col-3">
-      <div class="card">
+      <div class="card sticky-top">
         <div class="card-header">
           <h6 class="mb-0">
             Listado de ventas ( {{ vm.totalItems }} resultados )
@@ -155,7 +155,7 @@
                       <th colspan="3" class="text-end">Total c/des.:</th>
                       <th class="text-center text-danger">
                         {{
-                          calculateTotalFromPaymentMethods(vm.sales)
+                          calculateTotalWithDiscount(vm.sales, vm.productList)
                             | currency : "ARS" : "$"
                         }}
                       </th>
@@ -181,7 +181,7 @@
         </div>
       </div>
     </div>
-    <div class="col-4 m-auto">
+    <div class="col-4">
       @if (selectedSale(); as sale) {
       <div class="card shadow-sm sticky-top" style="top: 20px">
         <div
@@ -249,12 +249,6 @@
                 <small class="text-muted d-block"
                   >Subtotal: {{ item.subtotal | currency : "ARS" : "$" }}</small
                 >
-                @if(sale.discount > 0){
-                <small class="text-muted d-block"
-                  >Descuento:
-                  {{ sale.discount | currency : "ARS" : "$" }}</small
-                >
-                }
               </div>
             </li>
             }
@@ -271,6 +265,16 @@
                 {{ item.value | currency : "$" }}
               </div>
             </li>
+            @if(sale.discount > 0){
+            <li
+              class="list-group-item d-flex justify-content-between align-items-center px-1"
+            >
+              <div>
+                <strong>Descuento: </strong
+                >{{ sale.discount | currency : "ARS" : "$" }}
+              </div>
+            </li>
+            }
           </ul>
           <div class="row justify-content-end">
             <div class="col-12 mb-2 text-md-end">
