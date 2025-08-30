@@ -212,8 +212,11 @@ export class SaleSummaryModalComponent {
           // Si el usuario hizo clic en el botón "Sí, imprimir"
           if (result.isConfirmed) {
             this.ticketService.printTicket(
-              this.saleSummary(),
-              Array.from(this.payments),
+              {
+                products: this.saleSummary().products,
+                total: this.saleSummary().total,
+              },
+              this.payments,
               this.discount()
             );
             // Opcional: Muestra una pequeña notificación de que se está imprimiendo.
@@ -223,12 +226,15 @@ export class SaleSummaryModalComponent {
               showConfirmButton: false,
               timer: 1500,
             });
+            this.notifyFocusBarcodeInput(); // Emitir el evento para enfocar el input de código de barras
+            this.notifyParent(); // Emitir el evento para limpiar la venta
+            this.resetTotalToPay();
+          } else {
+            this.notifyFocusBarcodeInput(); // Emitir el evento para enfocar el input de código de barras
+            this.notifyParent(); // Emitir el evento para limpiar la venta
+            this.resetTotalToPay();
           }
-          this.notifyFocusBarcodeInput(); // Emitir el evento para enfocar el input de código de barras
         });
-        this.notifyFocusBarcodeInput(); // Emitir el evento para enfocar el input de código de barras
-        this.notifyParent(); // Emitir el evento para limpiar la venta
-        this.resetTotalToPay();
       });
     // .catch((error) => {
     //   Swal.close();

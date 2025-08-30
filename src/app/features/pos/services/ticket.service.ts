@@ -32,6 +32,7 @@ export class TicketService {
     };
 
     try {
+      console.log('Data: ', ticketData);
       const response = await fetch(url, {
         method: 'POST',
         headers: {
