@@ -33,7 +33,7 @@ import Swal from 'sweetalert2';
           style({
             opacity: 0,
             transform: 'translateX(-100%)',
-          })
+          }),
         ),
       ]),
     ]),
@@ -61,6 +61,12 @@ export class PosComponent {
     products: [],
     total: 0,
   }); // Resumen de la venta
+  // NUEVAS SIGNALS PARA FACTURACIÓN
+  isPosReady = signal<boolean>(false); // Controla si se muestra la UI
+  billingType = signal<
+    'CONSUMIDOR_FINAL' | 'RESPONSABLE_INSCRIPTO' | 'SIN_FACTURA' | null
+  >(null);
+  customerDocument = signal<string | null>(null); // Guardará el CUIT si aplica
 
   constructor(private elementRef: ElementRef) {
     // Recalcular el subtotal automáticamente cuando cambie la lista de productos
@@ -95,6 +101,17 @@ export class PosComponent {
   }
 
   ngOnInit(): void {
+    // 1. Primero lanzamos el modal para elegir el tipo de venta
+    this.promptBillingType().then(() => {
+      // 2. Una vez que el cajero eligió, mostramos la UI
+      this.isPosReady.set(true);
+
+      // 3. Recién ahora cargamos los productos y enfocamos el input
+      this.initializeProducts();
+    });
+  }
+
+  private initializeProducts(): void {
     if (
       !sessionStorage.getItem('productList') ||
       sessionStorage.getItem('productList') === '[]'
@@ -105,7 +122,7 @@ export class PosComponent {
         .then((products) => {
           sessionStorage.setItem(
             'productList',
-            JSON.stringify(this.productService.allProducts())
+            JSON.stringify(this.productService.allProducts()),
           );
         })
         .catch((error) => {
@@ -118,9 +135,57 @@ export class PosComponent {
         })
         .finally(() => {
           this.hideLoadingModal();
+          this.focusBarcodeInput();
         });
+    } else {
+      this.focusBarcodeInput();
     }
-    this.focusBarcodeInput();
+  }
+
+  // MÉTODO PARA EL FLUJO DE SWEETALERT
+  async promptBillingType(): Promise<void> {
+    const { value: type } = await Swal.fire({
+      title: 'Nueva Venta',
+      text: 'Seleccioná el tipo de facturación:',
+      icon: 'info',
+      input: 'radio',
+      inputOptions: {
+        CONSUMIDOR_FINAL: 'Consumidor Final',
+        RESPONSABLE_INSCRIPTO: 'Responsable Inscripto (Requiere CUIT)',
+        SIN_FACTURA: 'Consumo Interno / Remito (Sin Factura)',
+      },
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      confirmButtonText: 'Comenzar',
+      inputValidator: (value) => {
+        if (!value) {
+          return '¡Necesitás elegir una opción para empezar!';
+        }
+        return null;
+      },
+    });
+
+    this.billingType.set(type as any);
+
+    // Si es Responsable Inscripto, encadenamos otro modal para pedir el CUIT
+    if (type === 'RESPONSABLE_INSCRIPTO') {
+      const { value: cuit } = await Swal.fire({
+        title: 'Ingresar CUIT',
+        input: 'text',
+        inputLabel: 'CUIT del cliente (sin guiones)',
+        inputPlaceholder: 'Ej: 30111111118',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        confirmButtonText: 'Aceptar',
+        inputValidator: (value) => {
+          if (!value || value.length !== 11 || isNaN(Number(value))) {
+            return 'Ingresá un CUIT válido de 11 números';
+          }
+          return null;
+        },
+      });
+      this.customerDocument.set(cuit);
+    }
   }
 
   @HostListener('document:click', ['$event'])
@@ -138,7 +203,7 @@ export class PosComponent {
     console.log('Enfocando el input de código de barras...');
     setTimeout(() => {
       const barcodeInput = document.getElementById(
-        'barcode-input'
+        'barcode-input',
       ) as HTMLInputElement;
       if (barcodeInput) {
         barcodeInput.focus(); // Enfoca el input de código de barras
@@ -172,7 +237,7 @@ export class PosComponent {
     } else {
       //Asumo que si un producto se guarda con un código de barras, no se puede guardar con un PLU.
       const foundProductInSale = this.productToSaleList().find(
-        (product) => product.barcode === inputValue
+        (product) => product.barcode === inputValue,
       );
 
       if (foundProductInSale) {
@@ -182,21 +247,20 @@ export class PosComponent {
           foundProductInSale.quantity * foundProductInSale.price_by_unit!;
         this.productToSaleList.update((products) =>
           products.map((product) =>
-            product.barcode === inputValue ? foundProductInSale : product
-          )
+            product.barcode === inputValue ? foundProductInSale : product,
+          ),
         );
         this.hideLoadingModal(); // Oculta el modal
       } else {
         // Busca el producto por barcode en la base de datos
-        const product = await this.productService.getProductByBarcode(
-          inputValue
-        );
+        const product =
+          await this.productService.getProductByBarcode(inputValue);
         // BUSQUEDA POR PLU
         if (product().length === 0) {
           inputType = 'PLU';
           const pluCode: string = inputValue.slice(1, 6);
           const foundProductInSale = this.productToSaleList().find(
-            (product) => product.plu_code === pluCode
+            (product) => product.plu_code === pluCode,
           );
           if (foundProductInSale) {
             foundProductInSale.quantity++;
@@ -204,14 +268,13 @@ export class PosComponent {
               foundProductInSale.quantity * foundProductInSale.amount_to_pay!;
             this.productToSaleList.update((products) =>
               products.map((product) =>
-                product.plu_code === pluCode ? foundProductInSale : product
-              )
+                product.plu_code === pluCode ? foundProductInSale : product,
+              ),
             );
             this.hideLoadingModal(); // Oculta el modal
           } else {
-            const productByPlu = await this.productService.getProductsByPluCode(
-              pluCode
-            );
+            const productByPlu =
+              await this.productService.getProductsByPluCode(pluCode);
 
             const numberOfProductsFound = productByPlu.length;
 
@@ -316,7 +379,7 @@ export class PosComponent {
   }
 
   async promptPriceTypeSelection(
-    product: any
+    product: any,
   ): Promise<'unit' | 'kilo' | null> {
     const { value: option } = await Swal.fire({
       title: 'Seleccioná el tipo de precio',
@@ -343,7 +406,7 @@ export class PosComponent {
       this.filteredProducts = [];
     } else {
       this.filteredProducts = products.filter((product: Product) =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase())
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()),
       );
       this.showFilteredProducts.set(this.filteredProducts.length > 0);
     }
@@ -377,7 +440,7 @@ export class PosComponent {
           // Obtiene el valor del radio button seleccionado
           const tipoVenta = (
             Swal.getPopup()!.querySelector(
-              'input[name="tipoVenta"]:checked'
+              'input[name="tipoVenta"]:checked',
             ) as HTMLInputElement | null
           )?.value;
           if (!tipoVenta) {
@@ -413,7 +476,7 @@ export class PosComponent {
       html: `
         <p class="mb-2">Precio unitario: <strong>${product.price_by_unit?.toLocaleString(
           'es-AR',
-          { style: 'currency', currency: 'ARS' }
+          { style: 'currency', currency: 'ARS' },
         )}</strong></p>
         <hr>
         <div class="swal2-input-container">
@@ -421,7 +484,7 @@ export class PosComponent {
           <input id="swal-input-quantity" class="swal2-input" type="number" value="1" min="1" step="1">
           <h3 class="mt-4">Subtotal: <strong id="subtotal-display">${product.price_by_unit?.toLocaleString(
             'es-AR',
-            { style: 'currency', currency: 'ARS' }
+            { style: 'currency', currency: 'ARS' },
           )}</strong></h3>
         </div>
       `,
@@ -431,7 +494,7 @@ export class PosComponent {
       // Se ejecuta cuando el modal se renderiza
       didOpen: () => {
         const quantityInput = document.getElementById(
-          'swal-input-quantity'
+          'swal-input-quantity',
         ) as HTMLInputElement;
         quantityInput.focus();
         quantityInput.oninput = () => {
@@ -449,7 +512,7 @@ export class PosComponent {
         const quantity = parseInt(
           (document.getElementById('swal-input-quantity') as HTMLInputElement)
             .value,
-          10
+          10,
         );
         if (!quantity || quantity < 1) {
           Swal.showValidationMessage('La cantidad debe ser al menos 1');
@@ -477,7 +540,7 @@ export class PosComponent {
       html: `
         <p class="mb-2">Precio por Kilo: <strong>${product.price_by_kg?.toLocaleString(
           'es-AR',
-          { style: 'currency', currency: 'ARS' }
+          { style: 'currency', currency: 'ARS' },
         )}/Kg.</strong></p>
         <hr>
         <div class="swal2-input-container">
@@ -491,7 +554,7 @@ export class PosComponent {
       cancelButtonText: 'Cancelar',
       didOpen: () => {
         const weightInput = document.getElementById(
-          'swal-input-weight'
+          'swal-input-weight',
         ) as HTMLInputElement;
         weightInput.focus();
         weightInput.oninput = () => {
@@ -508,7 +571,7 @@ export class PosComponent {
         const weight = parseInt(
           (document.getElementById('swal-input-weight') as HTMLInputElement)
             .value,
-          10
+          10,
         );
         if (!weight || weight < 100) {
           Swal.showValidationMessage('El peso mínimo es de 100 gramos');
@@ -534,13 +597,15 @@ export class PosComponent {
   private addProductToList(productToAdd: Product): void {
     // Esta función no necesita cambios, maneja la lógica de agregar a la lista.
     const existingProduct = this.productToSaleList().find(
-      (p) => p.id === productToAdd.id && !p.is_weighed
+      (p) => p.id === productToAdd.id && !p.is_weighed,
     );
 
     if (existingProduct) {
       existingProduct.quantity += productToAdd.quantity;
       this.productToSaleList.update((products) =>
-        products.map((p) => (p.id === existingProduct.id ? existingProduct : p))
+        products.map((p) =>
+          p.id === existingProduct.id ? existingProduct : p,
+        ),
       );
     } else {
       this.productToSaleList.update((products) => [...products, productToAdd]);
@@ -561,7 +626,7 @@ export class PosComponent {
           }
           return product;
         })
-        .filter((product): product is Product => product !== null)
+        .filter((product): product is Product => product !== null),
     );
   }
   /**
