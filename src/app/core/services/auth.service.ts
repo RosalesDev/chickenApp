@@ -22,14 +22,14 @@ import {
   Subscription,
   switchMap,
 } from 'rxjs';
-import { doc, getDoc, getFirestore } from 'firebase/firestore';
+import { db } from '../../config/firebase.config';
+import { doc, getDoc } from 'firebase/firestore';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
   private auth = getAuth();
-  private firestore = getFirestore();
   private userService = inject(UserService);
   private userSubject = new BehaviorSubject<User | null>(null);
   user$ = this.userSubject.asObservable();
@@ -50,16 +50,16 @@ export class AuthService {
       }),
       // Aseguramos que solo emitamos cuando el perfil cambie
       distinctUntilChanged(
-        (prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)
-      )
+        (prev, curr) => JSON.stringify(prev) === JSON.stringify(curr),
+      ),
     );
 
     // Mapeamos el userProfile$ a userRoles$
     this.userRoles$ = this.userProfile$.pipe(
       map((userProfile) => userProfile?.roles || []),
       distinctUntilChanged(
-        (prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)
-      ) // Para evitar re-emisiones innecesarias
+        (prev, curr) => JSON.stringify(prev) === JSON.stringify(curr),
+      ), // Para evitar re-emisiones innecesarias
     );
 
     // Escuchamos los cambios de autenticación
@@ -74,7 +74,7 @@ export class AuthService {
           // `firstValueFrom` convierte el observable en una promesa y espera su primer valor.
           await firstValueFrom(this.userProfile$);
           console.log(
-            'AuthService: Perfil de usuario cargado desde Firestore.'
+            'AuthService: Perfil de usuario cargado desde Firestore.',
           );
 
           // 3. AHORA SÍ. Todo está cargado. Emitimos la señal "ready".
@@ -83,7 +83,7 @@ export class AuthService {
         } catch (error) {
           console.error(
             'Error al cargar el perfil de usuario desde Firestore:',
-            error
+            error,
           );
           // Si falla la carga del perfil, lo mejor es desloguear al usuario.
           await this.logout();
@@ -112,7 +112,7 @@ export class AuthService {
         // Verifica si hay al menos un rol común entre los roles del usuario y los roles requeridos
         return requiredRoles.some((role) => userRoles.includes(role));
       }),
-      distinctUntilChanged() // Para evitar re-emisiones si el resultado no cambia
+      distinctUntilChanged(), // Para evitar re-emisiones si el resultado no cambia
     );
   }
 
@@ -130,7 +130,7 @@ export class AuthService {
       console.log('No existe el usuario en la base de datos');
       return null;
     }
-    const userDoc = await getDoc(doc(this.firestore, 'users', user?.uid));
+    const userDoc = await getDoc(doc(db, 'users', user?.uid));
     console.log('userDoc: ', userDoc.data);
     if (!userDoc.exists()) {
       console.log('No existe el documento del usuario en la base de datos');

@@ -49,7 +49,7 @@ export const routes: Routes = [
         title: 'Productos',
         loadComponent: () =>
           import('./features/pos/pages/products/products.component').then(
-            (m) => m.ProductsComponent
+            (m) => m.ProductsComponent,
           ),
         // component: ProductsComponent,
         //canActivate: [authGuard],
@@ -60,10 +60,20 @@ export const routes: Routes = [
         canActivate: [authRoleGuard],
         data: { roles: ['ADMIN'] },
         loadComponent: () =>
-          import(
-            './features/pos/pages/products/components/create-product-form/create-product-form.component'
-          ).then((m) => m.CreateProductFormComponent),
+          import('./features/pos/pages/products/components/create-product-form/create-product-form.component').then(
+            (m) => m.CreateProductFormComponent,
+          ),
         // component: CreateProductFormComponent,
+      },
+      {
+        path: 'create-customer',
+        title: 'Nuevo Cliente',
+        canActivate: [authRoleGuard],
+        data: { roles: ['ADMIN', 'CAJERO'] }, // Ajusta los roles según necesites
+        loadComponent: () =>
+          import('./features/pos/pages/customers/components/create-customer/create-customer.component').then(
+            (m) => m.CreateCustomerComponent,
+          ),
       },
       {
         path: 'sales',

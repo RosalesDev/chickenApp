@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { db } from '../../../config/firebase.config';
 import {
   addDoc,
   collection,
@@ -7,14 +8,11 @@ import {
   DocumentData,
   getDoc,
   getDocs,
-  getFirestore,
-  limit,
   orderBy,
   query,
   QuerySnapshot,
   serverTimestamp,
   setDoc,
-  startAfter,
   updateDoc,
   where,
 } from 'firebase/firestore';
@@ -32,14 +30,13 @@ import { ErrorModel } from '../../../core/models/error-model';
 })
 export class ProductService {
   constructor() {}
-  private firestore = getFirestore(); // Obtiene la instancia Firestore
   private productsSignal = signal<Product[]>([]); // Signal para almacenar los productos
-  private productsCollection = collection(this.firestore, 'products'); // Referencia a la colección
+  private productsCollection = collection(db, 'products'); // Referencia a la colección
   allProducts = signal<Product[]>([]); // Lista de todos los productos
   fuse: Fuse<Product> | undefined;
 
   async getProductByBarcode(barcode: string) {
-    const productsRef = collection(this.firestore, 'products'); // Referencia a la colección
+    const productsRef = collection(db, 'products'); // Referencia a la colección
     const productsQuery = query(productsRef, where('barcode', '==', barcode)); // Consulta a Firestore
 
     await getDocs(productsQuery).then((querySnapshot) => {
@@ -60,18 +57,15 @@ export class ProductService {
     try {
       if (product.id) {
         // Si el producto tiene ID, lo actualiza en Firestore
-        const productRef = doc(this.firestore, collectionName, product.id);
+        const productRef = doc(db, collectionName, product.id);
         await setDoc(productRef, productDto, { merge: true });
       } else {
         // Si no tiene ID, lo agrega a Firestore y Firebase genera uno automáticamente
-        const docRef = await addDoc(
-          collection(this.firestore, collectionName),
-          productDto
-        );
+        const docRef = await addDoc(collection(db, collectionName), productDto);
         await setDoc(
-          doc(this.firestore, collectionName, docRef.id),
+          doc(db, collectionName, docRef.id),
           { ...productDto },
-          { merge: true }
+          { merge: true },
         );
       }
     } catch (error) {
@@ -107,7 +101,7 @@ export class ProductService {
   }
   // Actualizar un producto
   // async updateProduct(id: string, product: Partial<Product>): Promise<void> {
-  //   const productRef = doc(this.firestore, 'products', id); // Referencia al documento
+  //   const productRef = doc(db, 'products', id); // Referencia al documento
   //   await updateDoc(productRef, product); // Actualiza los datos en Firestore
   // }
   /**
@@ -120,7 +114,7 @@ export class ProductService {
    */
   async updateProduct(
     id: string,
-    productData: Partial<Product>
+    productData: Partial<Product>,
   ): Promise<void> {
     // 1. Validación de entradas
     if (!id) {
@@ -129,12 +123,12 @@ export class ProductService {
     if (!productData || Object.keys(productData).length === 0) {
       console.warn(
         'Se intentó actualizar un producto sin proporcionar datos. Operación cancelada.',
-        { id }
+        { id },
       );
       return; // Opcional: puedes lanzar un error si prefieres que esto no sea silencioso.
     }
 
-    const productRef = doc(this.firestore, 'products', id);
+    const productRef = doc(db, 'products', id);
 
     // 2. Añadir metadatos (timestamp)
     const dataToUpdate = {
@@ -158,7 +152,7 @@ export class ProductService {
     return getDoc(productRef).then((docSnap) => {
       if (!docSnap.exists()) {
         return Promise.reject(
-          new Error(`El producto con ID "${id}" no existe.`)
+          new Error(`El producto con ID "${id}" no existe.`),
         );
       }
       return deleteDoc(productRef);
@@ -186,7 +180,7 @@ export class ProductService {
     const q = query(
       this.productsCollection,
       where('name', '>=', name),
-      where('name', '<=', name + '\uf8ff') // Búsqueda que soporte prefijos
+      where('name', '<=', name + '\uf8ff'), // Búsqueda que soporte prefijos
     );
     const querySnapshot = await getDocs(q);
     return this.mapSnapshotToProducts(querySnapshot);
@@ -201,7 +195,7 @@ export class ProductService {
 
   // Utilidad para mapear los documentos a objetos Product
   private mapSnapshotToProducts(
-    snapshot: QuerySnapshot<DocumentData>
+    snapshot: QuerySnapshot<DocumentData>,
   ): Product[] {
     const products: Product[] = [];
     snapshot.docs.map((doc) => {

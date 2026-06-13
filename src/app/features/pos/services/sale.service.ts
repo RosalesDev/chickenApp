@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { db } from '../../../config/firebase.config';
 import {
   collection,
   doc,
@@ -7,7 +8,6 @@ import {
   DocumentSnapshot,
   endAt,
   getDocs,
-  getFirestore,
   limit,
   limitToLast,
   orderBy,
@@ -37,9 +37,8 @@ export interface PaginatedSalesResult {
 export class SaleService {
   constructor() {}
 
-  private firestore = getFirestore();
-  private salesCollection = collection(this.firestore, 'sales');
-  private productsCollection = collection(this.firestore, 'products');
+  private salesCollection = collection(db, 'sales');
+  private productsCollection = collection(db, 'products');
   readonly PAGE_SIZE = 5; // Define el tamaño de la página aquí
   // Define el rango máximo de días permitidos para la consulta.
   private readonly MAX_DATE_RANGE_IN_DAYS = 90;
@@ -89,8 +88,8 @@ export class SaleService {
       return throwError(
         () =>
           new Error(
-            `El rango de fechas excede el máximo permitido de ${this.MAX_DATE_RANGE_IN_DAYS} días.`
-          )
+            `El rango de fechas excede el máximo permitido de ${this.MAX_DATE_RANGE_IN_DAYS} días.`,
+          ),
       );
     }
 
@@ -104,7 +103,7 @@ export class SaleService {
           const saleDto: SaleDto = this.mapDocToSaleDto(doc);
           return saleDto;
         });
-      })
+      }),
     );
   }
 
@@ -122,7 +121,7 @@ export class SaleService {
   getSalesPaginated(
     filters: SalesFilters,
     direction: 'next' | 'prev' | 'initial' = 'initial',
-    cursor: DocumentSnapshot<DocumentData> | null = null
+    cursor: DocumentSnapshot<DocumentData> | null = null,
   ): Observable<PaginatedSalesResult> {
     // 1. Construye la consulta base con los filtros, igual que antes.
     let q = this.buildFilteredQuery(filters);
@@ -167,7 +166,7 @@ export class SaleService {
           lastVisible: salesDocs[snapshot.docs.length - 1] ?? null,
           firstVisible: salesDocs[0] ?? null,
         };
-      })
+      }),
     );
   }
 
@@ -177,7 +176,7 @@ export class SaleService {
    */
   buildFilteredQuery(
     filters: SalesFilters,
-    sortOrder: 'desc' | 'asc' = 'desc'
+    sortOrder: 'desc' | 'asc' = 'desc',
   ): Query<DocumentData> {
     let q: Query<DocumentData> = query(this.salesCollection);
 
@@ -215,7 +214,7 @@ export class SaleService {
         if (!product.id) {
           console.warn(
             'Se encontró un producto sin ID y será omitido:',
-            product
+            product,
           );
           continue; // Omitir este producto y continuar con el siguiente.
         }
@@ -248,7 +247,7 @@ export class SaleService {
   /* -------------------------------------------------------------------------- */
 
   async saveSale(
-    sale: SaleDto
+    sale: SaleDto,
   ): Promise<{ success: boolean; message: string; id?: string }> {
     try {
       const saleWithTimestamps = {
@@ -257,7 +256,7 @@ export class SaleService {
 
       const saleRef = doc(this.salesCollection);
 
-      await runTransaction(this.firestore, async (transaction) => {
+      await runTransaction(db, async (transaction) => {
         const productSnapshots: {
           ref: DocumentReference;
           data: any;
@@ -278,7 +277,7 @@ export class SaleService {
 
           if (newAvailability < 0) {
             throw new Error(
-              `Stock insuficiente para el producto: ${product.name.toLocaleUpperCase()}`
+              `Stock insuficiente para el producto: ${product.name.toLocaleUpperCase()}`,
             );
           }
 

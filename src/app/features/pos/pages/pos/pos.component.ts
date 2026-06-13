@@ -14,6 +14,9 @@ import { ModalSpinnerComponent } from '../../../../shared/components/modal-spinn
 import { Sale } from '../../../../core/models/sale-model';
 import { SaleSummaryModalComponent } from './components/sale-summary-modal/sale-summary-modal.component';
 import Swal from 'sweetalert2';
+import { CustomerService } from '../../services/customer.service';
+import { Customer } from '../../../../core/models/customer-model';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-pos',
@@ -51,7 +54,9 @@ export class PosComponent {
   selectedProduct!: Product;
   productsFoundByName = signal<Product[]>([]); // Resultado de la busqueda por nombre
   subtotal = signal<number>(0); // Subtotal calculado
+  private router = inject(Router);
   private productService = inject(ProductService); // Inyecta el servicio
+  private customerService = inject(CustomerService); // Inyecta el servicio de clientes
   showFilteredProducts = signal<boolean>(false);
   newSale = signal<Sale>(new Sale()); // Venta actual
   currentSaleSummary = signal<{
@@ -144,31 +149,73 @@ export class PosComponent {
 
   // MÉTODO PARA EL FLUJO DE SWEETALERT
   async promptBillingType(): Promise<void> {
-    const { value: type } = await Swal.fire({
+    let type:
+      | 'CONSUMIDOR_FINAL'
+      | 'RESPONSABLE_INSCRIPTO'
+      | 'SIN_FACTURA'
+      | null = null;
+
+    await Swal.fire({
       title: 'Nueva Venta',
-      text: 'Seleccioná el tipo de facturación:',
-      icon: 'info',
-      input: 'radio',
-      inputOptions: {
-        CONSUMIDOR_FINAL: 'Consumidor Final',
-        RESPONSABLE_INSCRIPTO: 'Responsable Inscripto (Requiere CUIT)',
-        SIN_FACTURA: 'Consumo Interno / Remito (Sin Factura)',
-      },
+      html: `
+        <p class="text-muted mb-4">Seleccioná el tipo de facturación:</p>
+        <div class="d-flex flex-column gap-3">
+          
+          <button class="btn btn-outline-primary btn-lg d-flex align-items-center justify-content-between p-3" id="btn-cf">
+            <div class="text-start">
+              <div class="fw-bold fs-5">Consumidor Final</div>
+              <small class="opacity-75">Factura C o Ticket rápido</small>
+            </div>
+            <i class="bi bi-person fs-2"></i>
+          </button>
+
+          <button class="btn btn-outline-success btn-lg d-flex align-items-center justify-content-between p-3" id="btn-ri">
+            <div class="text-start">
+              <div class="fw-bold fs-5">Responsable Inscripto</div>
+              <small class="opacity-75">Factura A (Requiere CUIT)</small>
+            </div>
+            <i class="bi bi-building fs-2"></i>
+          </button>
+
+          <button class="btn btn-outline-secondary btn-lg d-flex align-items-center justify-content-between p-3" id="btn-sf">
+            <div class="text-start">
+              <div class="fw-bold fs-5">Consumo Interno / Remito</div>
+              <small class="opacity-75">Sin comprobante fiscal</small>
+            </div>
+            <i class="bi bi-file-earmark-text fs-2"></i>
+          </button>
+
+        </div>
+      `,
+      showConfirmButton: false, // Ocultamos el botón "Comenzar" porque elegirán haciendo clic
       allowOutsideClick: false,
       allowEscapeKey: false,
-      confirmButtonText: 'Comenzar',
-      inputValidator: (value) => {
-        if (!value) {
-          return '¡Necesitás elegir una opción para empezar!';
-        }
-        return null;
+      didOpen: () => {
+        Swal.hideLoading(); // Por las dudas, limpiamos fantasmas
+
+        // Agregamos los eventos de clic a cada botón
+        document.getElementById('btn-cf')?.addEventListener('click', () => {
+          type = 'CONSUMIDOR_FINAL';
+          Swal.close();
+        });
+        document.getElementById('btn-ri')?.addEventListener('click', () => {
+          type = 'RESPONSABLE_INSCRIPTO';
+          Swal.close();
+        });
+        document.getElementById('btn-sf')?.addEventListener('click', () => {
+          type = 'SIN_FACTURA';
+          Swal.close();
+        });
       },
     });
 
-    this.billingType.set(type as any);
+    // Si por alguna razón se cierra sin valor, cortamos la ejecución
+    if (!type) return;
+
+    this.billingType.set(type);
 
     // Si es Responsable Inscripto, encadenamos otro modal para pedir el CUIT
-    if (type === 'RESPONSABLE_INSCRIPTO') {
+    /*     if (type === 'RESPONSABLE_INSCRIPTO') {
       const { value: cuit } = await Swal.fire({
         title: 'Ingresar CUIT',
         input: 'text',
@@ -185,6 +232,149 @@ export class PosComponent {
         },
       });
       this.customerDocument.set(cuit);
+    } */
+    // FLUJO PARA RESPONSABLE INSCRIPTO
+    if (type === 'RESPONSABLE_INSCRIPTO') {
+      const { value: searchTerm } = await Swal.fire({
+        title: 'Buscar Cliente',
+        input: 'text',
+        inputLabel: 'Ingresá el CUIT o parte del Nombre',
+        inputPlaceholder: 'Ej: 3071... o Perez',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showCancelButton: true,
+        cancelButtonText: 'Volver',
+        confirmButtonText: 'Buscar',
+        inputValidator: (value) => {
+          if (!value || value.trim().length < 3) {
+            return 'Ingresá al menos 3 caracteres para buscar';
+          }
+          return null;
+        },
+      });
+
+      if (searchTerm) {
+        Swal.fire({
+          title: 'Buscando...',
+          allowOutsideClick: false,
+          didOpen: () => Swal.showLoading(),
+        });
+
+        const allCustomers = await this.customerService.getAllCustomers();
+        const isNumeric = /^\d+$/.test(searchTerm.trim());
+        let matches: Customer[] = [];
+
+        if (isNumeric) {
+          matches = allCustomers.filter(
+            (c) => c.cuit && c.cuit.includes(searchTerm.trim()),
+          );
+        } else {
+          const lowerSearch = searchTerm.trim().toLowerCase();
+          matches = allCustomers.filter(
+            (c) => c.name && c.name.toLowerCase().includes(lowerSearch),
+          );
+        }
+
+        Swal.close();
+
+        let selectedCustomer: Customer | undefined = undefined;
+
+        if (matches.length > 0) {
+          // HAY COINCIDENCIAS -> Mostramos la lista interactiva
+          let selectedId: string | null = null;
+
+          // 1. Armamos el HTML de la lista usando clases de Bootstrap
+          // Le agregamos scroll (overflow-y) por si hay muchos resultados
+          const listHtml = `
+            <div class="list-group text-start shadow-sm mt-3" style="max-height: 300px; overflow-y: auto;">
+              ${matches
+                .map(
+                  (c) => `
+                <button type="button" class="list-group-item list-group-item-action customer-row" data-id="${c.id}">
+                  <div class="d-flex w-100 justify-content-between align-items-center">
+                    <h6 class="mb-1 fw-bold text-primary">${c.name}</h6>
+                    <small class="badge bg-secondary">CUIT: ${c.cuit || 'N/A'}</small>
+                  </div>
+                  <small class="text-muted"><i class="bi bi-geo-alt"></i> ${c.address || 'Sin dirección registrada'}</small>
+                </button>
+              `,
+                )
+                .join('')}
+            </div>
+          `;
+
+          // 2. Lanzamos el SweetAlert con la lista
+          await Swal.fire({
+            title: 'Seleccionar Cliente',
+            html: listHtml,
+            showCancelButton: true,
+            cancelButtonText: 'Volver',
+            showConfirmButton: false, // Ocultamos el botón "OK" porque confirmarán haciendo clic en la fila
+            allowOutsideClick: false,
+            didOpen: () => {
+              Swal.hideLoading();
+              // 3. Capturamos los clics en las filas generadas dinámicamente
+              const rows = document.querySelectorAll('.customer-row');
+              rows.forEach((row) => {
+                row.addEventListener('click', (e) => {
+                  // Obtenemos el ID del cliente seleccionado
+                  const target = e.currentTarget as HTMLElement;
+                  selectedId = target.getAttribute('data-id');
+                  Swal.close(); // Cerramos el modal al instante
+                });
+              });
+            },
+          });
+
+          // 4. Verificamos qué sucedió al cerrarse el modal
+          if (selectedId) {
+            // El usuario hizo clic en una fila
+            selectedCustomer = matches.find((c) => c.id === selectedId);
+          } else {
+            // El usuario hizo clic en el botón "Volver"
+            this.billingType.set(null);
+            this.promptBillingType();
+            return;
+          }
+        } else {
+          // CERO COINCIDENCIAS -> Flujo de redirección limpio
+          const result = await Swal.fire({
+            icon: 'warning',
+            title: 'Cliente no encontrado',
+            text: `No encontramos ningún cliente con "${searchTerm}". ¿Deseas registrar uno nuevo?`,
+            showCancelButton: true,
+            confirmButtonText: 'Sí, crear cliente',
+            cancelButtonText: 'Volver a intentar',
+            didOpen: () => {
+              Swal.hideLoading(); // <--- ELIMINA EL SPINNER FANTASMA AQUÍ TAMBIÉN
+            },
+          });
+
+          if (result.isConfirmed) {
+            // Redirigimos al módulo de clientes
+            const queryParams = isNumeric
+              ? { cuit: searchTerm.trim() }
+              : { name: searchTerm.trim() };
+            this.router.navigate(['/home/create-customer'], { queryParams }); // Ajusta la ruta si es necesario
+            return;
+          } else {
+            // Si elige "Volver a intentar", reiniciamos la pregunta
+            this.billingType.set(null);
+            this.promptBillingType();
+            return;
+          }
+        }
+
+        // Si llegó hasta aquí con un cliente válido, seteamos el CUIT para la factura
+        if (selectedCustomer && selectedCustomer.cuit) {
+          this.customerDocument.set(selectedCustomer.cuit);
+        }
+      } else {
+        // Canceló la búsqueda inicial (el primer input)
+        this.billingType.set(null);
+        this.promptBillingType();
+        return;
+      }
     }
   }
 

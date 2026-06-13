@@ -1,0 +1,93 @@
+<div class="card mt-5 shadow w-50 m-auto">
+  <div class="card-header text-center fs-5 fw-bold">CREAR CLIENTE</div>
+  <div class="card-body">
+    <form
+      class="needs-validation"
+      [formGroup]="form"
+      (ngSubmit)="createCustomer()"
+    >
+      <div class="container">
+        <div class="form-floating mb-3">
+          <input
+            autofocus
+            type="text"
+            id="cuit"
+            autocomplete="off"
+            placeholder="CUIT del cliente"
+            class="form-control"
+            formControlName="cuit"
+          />
+          <label for="cuit">CUIT (11 números, sin guiones)</label>
+          @if (
+            form.get("cuit")?.invalid &&
+            (form.get("cuit")?.touched || form.get("cuit")?.dirty)
+          ) {
+            <span class="text-danger small"
+              >El CUIT es obligatorio y debe tener 11 dígitos.</span
+            >
+          }
+        </div>
+
+        <div class="form-floating mb-3">
+          <input
+            type="text"
+            id="name"
+            autocomplete="off"
+            placeholder="Razón Social"
+            class="form-control text-uppercase"
+            formControlName="name"
+          />
+          <label for="name">Razón Social / Nombre Completo</label>
+          @if (
+            form.get("name")?.invalid &&
+            (form.get("name")?.touched || form.get("name")?.dirty)
+          ) {
+            <span class="text-danger small">El nombre es obligatorio.</span>
+          }
+        </div>
+
+        <div class="form-floating mb-3">
+          <select id="iva_cond" class="form-select" formControlName="iva_cond">
+            <option value="Consumidor final">Consumidor Final</option>
+            <option value="Responsable Inscripto">Responsable Inscripto</option>
+            <option value="Monotributo">Monotributo</option>
+            <option value="Exento">Exento</option>
+          </select>
+          <label for="iva_cond">Condición frente al IVA</label>
+        </div>
+
+        <div class="form-floating mb-3">
+          <input
+            type="text"
+            id="address"
+            autocomplete="off"
+            placeholder="Dirección"
+            class="form-control text-capitalize"
+            formControlName="address"
+          />
+          <label for="address">Dirección / Localidad</label>
+        </div>
+
+        <hr />
+
+        @if (isLoading) {
+          <button class="btn btn-info w-100" type="button" disabled>
+            <i class="bi bi-floppy"></i>
+            Guardando...
+            <div class="spinner-border spinner-border-sm ms-2" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </button>
+        } @else {
+          <button
+            type="submit"
+            class="btn btn-primary w-100"
+            [disabled]="form.invalid"
+          >
+            {{ form.invalid ? "Completa los campos" : "Guardar Cliente" }}
+          </button>
+        }
+      </div>
+    </form>
+  </div>
+</div>
