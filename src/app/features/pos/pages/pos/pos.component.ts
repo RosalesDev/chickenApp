@@ -17,6 +17,7 @@ import Swal from 'sweetalert2';
 import { CustomerService } from '../../services/customer.service';
 import { Customer } from '../../../../core/models/customer-model';
 import { Router } from '@angular/router';
+import { BILLING_TYPE_MODAL_HTML } from './pos.templates';
 
 @Component({
   selector: 'app-pos',
@@ -157,36 +158,7 @@ export class PosComponent {
 
     await Swal.fire({
       title: 'Nueva Venta',
-      html: `
-        <p class="text-muted mb-4">Seleccioná el tipo de facturación:</p>
-        <div class="d-flex flex-column gap-3">
-          
-          <button class="btn btn-outline-primary btn-lg d-flex align-items-center justify-content-between p-3" id="btn-cf">
-            <div class="text-start">
-              <div class="fw-bold fs-5">Consumidor Final</div>
-              <small class="opacity-75">Factura C o Ticket rápido</small>
-            </div>
-            <i class="bi bi-person fs-2"></i>
-          </button>
-
-          <button class="btn btn-outline-success btn-lg d-flex align-items-center justify-content-between p-3" id="btn-ri">
-            <div class="text-start">
-              <div class="fw-bold fs-5">Responsable Inscripto</div>
-              <small class="opacity-75">Factura A (Requiere CUIT)</small>
-            </div>
-            <i class="bi bi-building fs-2"></i>
-          </button>
-
-          <button class="btn btn-outline-secondary btn-lg d-flex align-items-center justify-content-between p-3" id="btn-sf">
-            <div class="text-start">
-              <div class="fw-bold fs-5">Consumo Interno / Remito</div>
-              <small class="opacity-75">Sin comprobante fiscal</small>
-            </div>
-            <i class="bi bi-file-earmark-text fs-2"></i>
-          </button>
-
-        </div>
-      `,
+      html: BILLING_TYPE_MODAL_HTML,
       showConfirmButton: false, // Ocultamos el botón "Comenzar" porque elegirán haciendo clic
       allowOutsideClick: false,
       allowEscapeKey: false,
@@ -214,25 +186,6 @@ export class PosComponent {
 
     this.billingType.set(type);
 
-    // Si es Responsable Inscripto, encadenamos otro modal para pedir el CUIT
-    /*     if (type === 'RESPONSABLE_INSCRIPTO') {
-      const { value: cuit } = await Swal.fire({
-        title: 'Ingresar CUIT',
-        input: 'text',
-        inputLabel: 'CUIT del cliente (sin guiones)',
-        inputPlaceholder: 'Ej: 30111111118',
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        confirmButtonText: 'Aceptar',
-        inputValidator: (value) => {
-          if (!value || value.length !== 11 || isNaN(Number(value))) {
-            return 'Ingresá un CUIT válido de 11 números';
-          }
-          return null;
-        },
-      });
-      this.customerDocument.set(cuit);
-    } */
     // FLUJO PARA RESPONSABLE INSCRIPTO
     if (type === 'RESPONSABLE_INSCRIPTO') {
       const { value: searchTerm } = await Swal.fire({
