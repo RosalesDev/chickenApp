@@ -22,6 +22,7 @@ export class CreateCustomerComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private customerService = inject(CustomerService);
+  isSearchingAfip = false;
 
   form: FormGroup;
   isLoading = false;
@@ -52,6 +53,57 @@ export class CreateCustomerComponent implements OnInit {
         });
       }
     });
+  }
+
+  // NUEVA FUNCIÓN: Busca en AFIP y autocompleta
+  async searchInAfip(): Promise<void> {
+    const cuitControl = this.form.get('cuit');
+
+    if (!cuitControl?.value || cuitControl.value.length !== 11) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'CUIT Inválido',
+        text: 'Por favor, ingresá los 11 números del CUIT antes de buscar.',
+      });
+      return;
+    }
+
+    this.isSearchingAfip = true;
+
+    try {
+      // Llamamos al servicio
+      const afipData = await this.customerService.getAfipData(
+        cuitControl.value,
+      );
+
+      // Autocompletamos el formulario mágicamente
+      this.form.patchValue({
+        name: afipData.name,
+        address: afipData.address,
+        iva_cond: afipData.iva_cond,
+      });
+
+      // Pequeño feedback visual
+      const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+      });
+      Toast.fire({
+        icon: 'success',
+        title: 'Datos obtenidos de AFIP',
+      });
+    } catch (error: any) {
+      Swal.fire({
+        icon: 'info',
+        title: 'No encontrado',
+        text: 'No pudimos obtener los datos de AFIP. Podés ingresarlos manualmente.',
+      });
+    } finally {
+      this.isSearchingAfip = false;
+    }
   }
 
   async createCustomer(): Promise<void> {

@@ -7,26 +7,48 @@
       (ngSubmit)="createCustomer()"
     >
       <div class="container">
-        <div class="form-floating mb-3">
-          <input
-            autofocus
-            type="text"
-            id="cuit"
-            autocomplete="off"
-            placeholder="CUIT del cliente"
-            class="form-control"
-            formControlName="cuit"
-          />
-          <label for="cuit">CUIT (11 números, sin guiones)</label>
-          @if (
-            form.get("cuit")?.invalid &&
-            (form.get("cuit")?.touched || form.get("cuit")?.dirty)
-          ) {
-            <span class="text-danger small"
-              >El CUIT es obligatorio y debe tener 11 dígitos.</span
-            >
-          }
+        <!-- CAMPO CUIT CON BOTÓN AFIP (Integrado con form-floating) -->
+        <div class="input-group mb-3 shadow-sm">
+          <div class="form-floating">
+            <input
+              autofocus
+              type="text"
+              id="cuit"
+              autocomplete="off"
+              placeholder="CUIT del cliente"
+              class="form-control"
+              formControlName="cuit"
+            />
+            <label for="cuit">CUIT (11 números, sin guiones)</label>
+          </div>
+          <button
+            class="btn btn-primary d-flex align-items-center px-4"
+            type="button"
+            (click)="searchInAfip()"
+            [disabled]="isSearchingAfip || form.get('cuit')?.invalid"
+          >
+            @if (isSearchingAfip) {
+              <div
+                class="spinner-border spinner-border-sm me-2"
+                role="status"
+              ></div>
+              Buscando...
+            } @else {
+              <i class="bi bi-search me-2"></i>
+              Buscar AFIP
+            }
+          </button>
         </div>
+
+        <!-- Mensaje de error del CUIT movido abajo del grupo -->
+        @if (
+          form.get("cuit")?.invalid &&
+          (form.get("cuit")?.touched || form.get("cuit")?.dirty)
+        ) {
+          <div class="text-danger small mb-3 mt-n2">
+            El CUIT es obligatorio y debe tener 11 dígitos.
+          </div>
+        }
 
         <div class="form-floating mb-3">
           <input
@@ -48,10 +70,10 @@
 
         <div class="form-floating mb-3">
           <select id="iva_cond" class="form-select" formControlName="iva_cond">
-            <option value="Consumidor final">Consumidor Final</option>
-            <option value="Responsable Inscripto">Responsable Inscripto</option>
-            <option value="Monotributo">Monotributo</option>
-            <option value="Exento">Exento</option>
+            <option value="CONSUMIDOR_FINAL">Consumidor Final</option>
+            <option value="RESPONSABLE_INSCRIPTO">Responsable Inscripto</option>
+            <option value="MONOTRIBUTO">Monotributo</option>
+            <option value="EXENTO">Exento</option>
           </select>
           <label for="iva_cond">Condición frente al IVA</label>
         </div>

@@ -63,9 +63,11 @@ export class PosComponent {
   currentSaleSummary = signal<{
     products: any[];
     total: number;
+    customer: Customer | null;
   }>({
     products: [],
     total: 0,
+    customer: null,
   }); // Resumen de la venta
   // NUEVAS SIGNALS PARA FACTURACIÓN
   isPosReady = signal<boolean>(false); // Controla si se muestra la UI
@@ -73,6 +75,7 @@ export class PosComponent {
     'CONSUMIDOR_FINAL' | 'RESPONSABLE_INSCRIPTO' | 'SIN_FACTURA' | null
   >(null);
   customerDocument = signal<string | null>(null); // Guardará el CUIT si aplica
+  selectedCustomer: Customer | null = null;
 
   constructor(private elementRef: ElementRef) {
     // Recalcular el subtotal automáticamente cuando cambie la lista de productos
@@ -321,6 +324,7 @@ export class PosComponent {
         // Si llegó hasta aquí con un cliente válido, seteamos el CUIT para la factura
         if (selectedCustomer && selectedCustomer.cuit) {
           this.customerDocument.set(selectedCustomer.cuit);
+          this.selectedCustomer = selectedCustomer;
         }
       } else {
         // Canceló la búsqueda inicial (el primer input)
@@ -361,6 +365,7 @@ export class PosComponent {
     this.currentSaleSummary.set({
       products: this.productToSaleList(),
       total: this.subtotal(),
+      customer: this.selectedCustomer,
     }); // Actualiza el resumen de la venta.
   }
   /**
@@ -799,7 +804,18 @@ export class PosComponent {
 
   cleanSale(): void {
     this.productToSaleList.set([]); // Limpia los productos escaneados
+    this.subtotal.set(0);
+
+    // NUEVO: Limpiamos los datos del cliente y el tipo de facturación
+    this.selectedCustomer = null;
+    this.customerDocument.set(null);
+    this.billingType.set(null);
+    this.currentSaleSummary.set({ products: [], total: 0, customer: null });
+
     this.focusBarcodeInput();
+
+    // IMPORTANTE: Volvemos a lanzar el modal inicial para el próximo cliente
+    this.promptBillingType();
   }
 
   finalizeSale(): void {

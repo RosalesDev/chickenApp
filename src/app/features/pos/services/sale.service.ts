@@ -3,6 +3,7 @@ import { db } from '../../../config/firebase.config';
 import {
   collection,
   doc,
+  getDoc,
   DocumentData,
   DocumentReference,
   DocumentSnapshot,
@@ -243,6 +244,44 @@ export class SaleService {
   }
 
   /* -------------------------------------------------------------------------- */
+  /* PRE-VERIFICACIÓN RÁPIDA DE STOCK                      */
+  /* -------------------------------------------------------------------------- */
+  async verifyStockAvailability(
+    products: any[],
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      for (const product of products) {
+        const productRef = doc(this.productsCollection, product.id as string);
+        const productSnap = await getDoc(productRef);
+
+        if (!productSnap.exists()) {
+          return {
+            success: false,
+            message: `El producto ${product.name} no existe en la base de datos.`,
+          };
+        }
+
+        const currentAvailability =
+          productSnap.data()['availability_in_deposit'] ?? 0;
+
+        if (currentAvailability - product.quantity < 0) {
+          return {
+            success: false,
+            message: `Stock insuficiente para: ${product.name.toUpperCase()}. Disponible: ${currentAvailability}`,
+          };
+        }
+      }
+      return { success: true, message: 'Stock validado correctamente.' };
+    } catch (error: any) {
+      console.error('Error verificando stock:', error);
+      return {
+        success: false,
+        message: 'Error de conexión al verificar el stock.',
+      };
+    }
+  }
+
+  /* -------------------------------------------------------------------------- */
   /*                GUARDAR VENTA Y ACTUALIZAR STOCK DE PRODUCTOS               */
   /* -------------------------------------------------------------------------- */
 
@@ -319,6 +358,32 @@ export class SaleService {
         success: false,
         message: error.message || 'Error al guardar la venta',
       };
+    }
+  }
+
+  /* ---------------------------------------------------*/
+  /*                FACTURACIÓN CON AFIP               */
+  /* ------------------------------------------------- */
+  async billWithAFIP(payload: { total: number; cliente: any }): Promise<any> {
+    try {
+      const response = await fetch('http://localhost:3000/api/facturar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(
+          result.error || result.detalle || 'Error al facturar en AFIP',
+        );
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Error en SaleService (AFIP):', error);
+      throw error;
     }
   }
 }

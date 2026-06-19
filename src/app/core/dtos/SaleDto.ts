@@ -19,6 +19,10 @@ export interface SaleDto {
   total: number;
   user_seller: User;
   is_local_sale: boolean;
+  afip_cae?: string;
+  afip_vencimiento_cae?: string;
+  afip_numero_factura?: string;
+  afip_tipo_factura?: string;
 }
 
 export interface SalesFilters {

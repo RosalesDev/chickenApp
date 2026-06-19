@@ -45,9 +45,10 @@ export class SaleSummaryModalComponent {
     this.focusBarcodeInput.emit();
   }
 
-  saleSummary = input<{ products: any[]; total: number }>({
+  saleSummary = input<{ products: any[]; total: number; customer: any }>({
     products: [],
     total: 0,
+    customer: null,
   });
 
   discount = signal(0);
@@ -114,7 +115,7 @@ export class SaleSummaryModalComponent {
   }
 
   addPayment(
-    payment: PaymentMethod = { type: 'cash', amount: 0, name: 'Efectivo' }
+    payment: PaymentMethod = { type: 'cash', amount: 0, name: 'Efectivo' },
   ) {
     this.payments.push(payment);
   }
@@ -126,7 +127,7 @@ export class SaleSummaryModalComponent {
       // Usamos la fábrica para crear el objeto de pago
       const payment = this.paymentFactory.createPayment(
         type,
-        this.totalToPay()
+        this.totalToPay(),
       );
 
       this.payments.push(payment);
@@ -151,25 +152,53 @@ export class SaleSummaryModalComponent {
     this.updatePaymentSum();
   }
 
-  finalizeSale() {
+  async finalizeSale() {
     Swal.fire({
-      title: 'Finalizando venta...',
-      text: 'Por favor, espere un momento.',
+      title: 'Validando...',
       allowOutsideClick: false,
-      showConfirmButton: false,
-      didOpen: () => {
-        Swal.showLoading();
-      },
+      didOpen: () => Swal.showLoading(),
     });
-    this.saleService
-      .saveSale({
+
+    try {
+      // ---------------------------------------------------------
+      // PASO 0: VERIFICAR STOCK ANTES DE HABLAR CON AFIP
+      // ---------------------------------------------------------
+      const stockCheck = await this.saleService.verifyStockAvailability(
+        this.saleSummary().products,
+      );
+      if (!stockCheck.success) {
+        // Si no hay stock, lanzamos el error aquí y cortamos la ejecución.
+        // AFIP nunca se entera.
+        throw new Error(stockCheck.message);
+      }
+
+      // 1. OBTENER EL CLIENTE
+      const currentCustomer = this.saleSummary().customer;
+      const totalAPagar = this.saleSummary().total - this.discount();
+
+      console.log('Cliente para la venta:', currentCustomer);
+
+      // 2. RECIÉN AHORA FACTURAMOS EN AFIP
+      Swal.update({ title: 'Generando comprobante fiscal...' });
+      const afipResponse = await this.saleService.billWithAFIP({
+        total: totalAPagar,
+        cliente: currentCustomer,
+      });
+      const afipData = {
+        cae: afipResponse.cae,
+        vencimientoCae: afipResponse.vencimientoCae,
+        numeroFactura: afipResponse.numeroFactura,
+        tipoFactura: afipResponse.tipoFactura,
+      };
+      Swal.update({ title: 'Guardando registros...' });
+      const saleToSave = {
         balance_after_sale: 0,
         balance_before_sale: 0,
         cash_installment: 0,
-        customer_id: '',
+        customer_id: currentCustomer?.cuit || '',
+        customer_name: currentCustomer?.name || 'Consumidor Final',
         date_created: null,
         date_modified: null,
-        customer_name: '',
         discount: this.discount(),
         mp_installment: 0,
         payment_method: this.payments,
@@ -185,68 +214,69 @@ export class SaleSummaryModalComponent {
           status: '',
         },
         is_local_sale: true,
-      })
-      .then((result) => {
-        Swal.close();
-        if (!result.success) {
-          console.error('Error al guardar la venta:', result.message);
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: `Ocurrió un error al finalizar la venta: ${result.message}`,
-          });
-          this.isLoading = false;
-          return;
-        }
-        Swal.fire({
-          title: '¡Venta Finalizada!',
-          text: '¿Deseas imprimir el ticket?',
-          icon: 'success',
-          showCancelButton: true,
-          confirmButtonColor: '#3085d6',
-          cancelButtonColor: '#d33',
-          confirmButtonText: 'Sí, imprimir',
-          cancelButtonText: 'No',
-          allowOutsideClick: false,
-        }).then((result) => {
-          // Si el usuario hizo clic en el botón "Sí, imprimir"
-          if (result.isConfirmed) {
-            this.ticketService.printTicket(
-              {
-                products: this.saleSummary().products,
-                total: this.saleSummary().total,
-              },
-              this.payments,
-              this.discount()
-            );
-            // Opcional: Muestra una pequeña notificación de que se está imprimiendo.
-            Swal.fire({
-              icon: 'info',
-              title: 'Imprimiendo ticket...',
-              showConfirmButton: false,
-              timer: 1500,
-            });
-            this.notifyFocusBarcodeInput(); // Emitir el evento para enfocar el input de código de barras
-            this.notifyParent(); // Emitir el evento para limpiar la venta
-            this.resetTotalToPay();
-          } else {
-            this.notifyFocusBarcodeInput(); // Emitir el evento para enfocar el input de código de barras
-            this.notifyParent(); // Emitir el evento para limpiar la venta
-            this.resetTotalToPay();
-          }
-        });
+        // Datos AFIP inyectados en tu base de datos
+        afip_cae: afipData.cae,
+        afip_vencimiento_cae: afipData.vencimientoCae,
+        afip_numero_factura: afipData.numeroFactura,
+        afip_tipo_factura: afipData.tipoFactura,
+      };
+      const result = await this.saleService.saveSale(saleToSave);
+      if (!result.success) {
+        // OJO AQUÍ: Si falla Firebase después de que AFIP aprobó,
+        // tienes una factura válida pero no está guardada en tu BD local.
+        // Por ahora lo atajamos con un error, pero es bueno saberlo.
+        throw new Error(
+          `AFIP aprobó la venta, pero falló el guardado local: ${result.message}`,
+        );
+      }
+
+      Swal.close();
+      // ---------------------------------------------------------
+      // PASO 4: IMPRIMIR Y LIMPIAR
+      // ---------------------------------------------------------
+      const confirmPrint = await Swal.fire({
+        title: `¡Factura ${afipData.tipoFactura} N° ${afipData.numeroFactura} Generada!`,
+        text: '¿Deseas imprimir el ticket?',
+        icon: 'success',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, imprimir',
+        cancelButtonText: 'No',
+        allowOutsideClick: false,
       });
-    // .catch((error) => {
-    //   Swal.close();
-    //   console.error('Error al guardar la venta:', error);
-    //   Swal.fire({
-    //     icon: 'error',
-    //     title: 'Error',
-    //     text: 'Ocurrió un error al finalizar la venta.',
-    //   });
-    //   this.isLoading = false;
-    //   return;
-    // });
+
+      if (confirmPrint.isConfirmed) {
+        this.ticketService.printTicket(
+          {
+            products: this.saleSummary().products,
+            total: this.saleSummary().total,
+          },
+          this.payments,
+          this.discount(),
+          afipData,
+        );
+        Swal.fire({
+          icon: 'info',
+          title: 'Imprimiendo...',
+          showConfirmButton: false,
+          timer: 1500,
+        });
+      }
+
+      this.notifyFocusBarcodeInput();
+      this.notifyParent(); // Este llamará a tu nuevo cleanSale() que arreglamos antes
+      this.resetTotalToPay();
+    } catch (error: any) {
+      Swal.close();
+      console.error('Error en el flujo de venta:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Operación cancelada',
+        text: error.message || 'La operación no pudo completarse.',
+      });
+      this.isLoading = false;
+    }
 
     console.log('Venta finalizada con éxito:', {
       saleSummary: this.saleSummary,

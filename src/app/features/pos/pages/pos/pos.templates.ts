@@ -5,14 +5,14 @@ export const BILLING_TYPE_MODAL_HTML = `
     <button class="btn btn-outline-primary btn-lg d-flex align-items-center justify-content-between p-3" id="btn-cf">
       <div class="text-start">
         <div class="fw-bold fs-5">Consumidor Final</div>
-        <small class="opacity-75">Factura C o Ticket rápido</small>
+        <small class="opacity-75">Factura B</small>
       </div>
       <i class="bi bi-person fs-2"></i>
     </button>
 
     <button class="btn btn-outline-success btn-lg d-flex align-items-center justify-content-between p-3" id="btn-ri">
       <div class="text-start">
-        <div class="fw-bold fs-5">Responsable Inscripto</div>
+        <div class="fw-bold fs-5">RI / Monotributista</div>
         <small class="opacity-75">Factura A (Requiere CUIT)</small>
       </div>
       <i class="bi bi-building fs-2"></i>

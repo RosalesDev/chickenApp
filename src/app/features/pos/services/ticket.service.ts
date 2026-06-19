@@ -13,7 +13,13 @@ export class TicketService {
     data: { products: Product[]; total: number },
     payments: PaymentMethod[],
     discount: number = 0,
-    saleDate: string = new Date().toISOString()
+    afipData: {
+      cae: any;
+      vencimientoCae: any;
+      numeroFactura: any;
+      tipoFactura: any;
+    },
+    saleDate: string = new Date().toISOString(),
   ) {
     const url = 'http://localhost:3000/print';
     const productList = data.products;

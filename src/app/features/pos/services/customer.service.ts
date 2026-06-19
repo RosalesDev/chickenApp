@@ -14,6 +14,28 @@ export class CustomerService {
 
   constructor() {}
 
+  // Agrega esto en tu CustomerService
+  async getAfipData(cuit: string): Promise<any> {
+    try {
+      // Ajusta el puerto y la URL según tu backend de Node
+      const response = await fetch(
+        `http://localhost:3000/api/afip/padron/${cuit}`,
+      );
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(
+          result.error || result.message || 'Error al buscar en AFIP',
+        );
+      }
+
+      return result.data;
+    } catch (error) {
+      console.error('Error en CustomerService (AFIP):', error);
+      throw error;
+    }
+  }
+
   /**
    * Obtiene todos los clientes de Firebase o de la caché local.
    */
