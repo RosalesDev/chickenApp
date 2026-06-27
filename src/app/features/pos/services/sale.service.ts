@@ -366,6 +366,20 @@ export class SaleService {
   /* ------------------------------------------------- */
   async billWithAFIP(payload: { total: number; cliente: any }): Promise<any> {
     try {
+      // 1. LEER EL FLAG DE ENTORNO DESDE FIRESTORE
+      const configRef = doc(db, 'config', 'arca_config');
+      const configSnap = await getDoc(configRef);
+
+      // Si no existe el documento, por seguridad asumimos que es Homologación (false)
+      const isProduction = configSnap.exists()
+        ? configSnap.data()['isProduction']
+        : false;
+
+      // 2. ADJUNTAR EL FLAG AL PAQUETE
+      const finalPayload = {
+        ...payload,
+        isProduction: isProduction,
+      };
       const response = await fetch('http://localhost:3000/api/facturar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

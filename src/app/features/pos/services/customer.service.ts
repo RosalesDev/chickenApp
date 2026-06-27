@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { collection, getDocs, addDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, doc, getDoc } from 'firebase/firestore';
 import { Customer } from '../../../core/models/customer-model';
 import { db } from '../../../config/firebase.config';
 
@@ -17,9 +17,14 @@ export class CustomerService {
   // Agrega esto en tu CustomerService
   async getAfipData(cuit: string): Promise<any> {
     try {
+      const configRef = doc(db, 'config', 'arca_config');
+      const configSnap = await getDoc(configRef);
+      const isProduction = configSnap.exists()
+        ? configSnap.data()['isProduction']
+        : false;
       // Ajusta el puerto y la URL según tu backend de Node
       const response = await fetch(
-        `http://localhost:3000/api/afip/padron/${cuit}`,
+        `http://localhost:3000/api/afip/padron/${cuit}?isProduction=${isProduction}`,
       );
       const result = await response.json();
 
