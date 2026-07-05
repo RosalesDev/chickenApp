@@ -364,7 +364,11 @@ export class SaleService {
   /* ---------------------------------------------------*/
   /*                FACTURACIÓN CON AFIP               */
   /* ------------------------------------------------- */
-  async billWithAFIP(payload: { total: number; cliente: any }): Promise<any> {
+  async billWithAFIP(payload: {
+    total: number;
+    cliente: any;
+    tipoFactura: string;
+  }): Promise<any> {
     try {
       // 1. LEER EL FLAG DE ENTORNO DESDE FIRESTORE
       const configRef = doc(db, 'config', 'arca_config');

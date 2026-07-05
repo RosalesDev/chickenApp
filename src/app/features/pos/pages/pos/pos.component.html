@@ -1,16 +1,36 @@
 @if (isPosReady()) {
   <div class="card shadow mx-3">
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <span>Nueva Venta</span>
-      <span class="badge text-bg-primary fs-6">
-        @if (billingType() === "CONSUMIDOR_FINAL") {
-          Consumidor Final
-        } @else if (billingType() === "RESPONSABLE_INSCRIPTO") {
-          Responsable Inscripto (CUIT: {{ customerDocument() }})
-        } @else {
-          Sin Factura
+    <div
+      class="card-header d-flex justify-content-between align-items-center bg-light"
+    >
+      <span class="fw-bold fs-5">Nueva Venta</span>
+
+      <div class="d-flex align-items-center gap-2">
+        <label
+          for="billingTypeSelect"
+          class="form-label mb-0 fw-bold text-nowrap"
+          >Comprobante:</label
+        >
+        <select
+          id="billingTypeSelect"
+          class="form-select form-select-sm border-primary fw-bold"
+          style="cursor: pointer; width: auto"
+          [ngModel]="billingType()"
+          (ngModelChange)="onBillingTypeChange($event)"
+        >
+          <option value="CONSUMIDOR_FINAL">Factura B (Consumidor Final)</option>
+          <option value="RESPONSABLE_INSCRIPTO">
+            Factura A (Responsable Inscripto)
+          </option>
+          <option value="SIN_FACTURA">Sin Factura (Remito)</option>
+        </select>
+
+        @if (billingType() === "RESPONSABLE_INSCRIPTO" && customerDocument()) {
+          <span class="badge text-bg-primary fs-6 ms-2">
+            CUIT: {{ customerDocument() }}
+          </span>
         }
-      </span>
+      </div>
     </div>
     <div class="card-body">
       <!-- ------------------------ BUSCDOR DE PRODUCTOS ------------------------- -->

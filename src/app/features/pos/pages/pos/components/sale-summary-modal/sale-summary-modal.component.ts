@@ -45,10 +45,16 @@ export class SaleSummaryModalComponent {
     this.focusBarcodeInput.emit();
   }
 
-  saleSummary = input<{ products: any[]; total: number; customer: any }>({
+  saleSummary = input<{
+    products: any[];
+    total: number;
+    customer: any;
+    billingType: string;
+  }>({
     products: [],
     total: 0,
     customer: null,
+    billingType: 'CONSUMIDOR_FINAL',
   });
 
   discount = signal(0);
@@ -157,6 +163,9 @@ export class SaleSummaryModalComponent {
       title: 'Validando...',
       allowOutsideClick: false,
       didOpen: () => Swal.showLoading(),
+      //quito los botones de confirmación y cancelación para que no se pueda cerrar el modal
+      showConfirmButton: false,
+      allowEscapeKey: false,
     });
 
     try {
@@ -175,21 +184,29 @@ export class SaleSummaryModalComponent {
       // 1. OBTENER EL CLIENTE
       const currentCustomer = this.saleSummary().customer;
       const totalAPagar = this.saleSummary().total - this.discount();
+      const tipoFacturacion = this.saleSummary().billingType;
+
+      let afipData: any = null;
 
       console.log('Cliente para la venta:', currentCustomer);
 
-      // 2. RECIÉN AHORA FACTURAMOS EN AFIP
-      Swal.update({ title: 'Generando comprobante fiscal...' });
-      const afipResponse = await this.saleService.billWithAFIP({
-        total: totalAPagar,
-        cliente: currentCustomer,
-      });
-      const afipData = {
-        cae: afipResponse.cae,
-        vencimientoCae: afipResponse.vencimientoCae,
-        numeroFactura: afipResponse.numeroFactura,
-        tipoFactura: afipResponse.tipoFactura,
-      };
+      // 2. FACTURAR EN AFIP (¡SOLO SI NO ES REMITO!)
+      if (tipoFacturacion !== 'SIN_FACTURA') {
+        Swal.update({ title: 'Generando comprobante fiscal...' });
+        const afipResponse = await this.saleService.billWithAFIP({
+          total: totalAPagar,
+          cliente: currentCustomer,
+          tipoFactura: tipoFacturacion,
+        });
+        const afipData = {
+          cae: afipResponse.cae,
+          vencimientoCae: afipResponse.vencimientoCae,
+          numeroFactura: afipResponse.numeroFactura,
+          tipoFactura: afipResponse.tipoFactura,
+        };
+      }
+
+      //Guardamos la venta en Firebase, incluyendo los datos de AFIP si los hay
       Swal.update({ title: 'Guardando registros...' });
       const saleToSave = {
         balance_after_sale: 0,
@@ -215,10 +232,10 @@ export class SaleSummaryModalComponent {
         },
         is_local_sale: true,
         // Datos AFIP inyectados en tu base de datos
-        afip_cae: afipData.cae,
-        afip_vencimiento_cae: afipData.vencimientoCae,
-        afip_numero_factura: afipData.numeroFactura,
-        afip_tipo_factura: afipData.tipoFactura,
+        afip_cae: afipData ? afipData.cae : null,
+        afip_vencimiento_cae: afipData ? afipData.vencimientoCae : null,
+        afip_numero_factura: afipData ? afipData.numeroFactura : null,
+        afip_tipo_factura: afipData ? afipData.tipoFactura : 'REMITO NO FISCAL',
       };
       const result = await this.saleService.saveSale(saleToSave);
       if (!result.success) {
@@ -226,7 +243,7 @@ export class SaleSummaryModalComponent {
         // tienes una factura válida pero no está guardada en tu BD local.
         // Por ahora lo atajamos con un error, pero es bueno saberlo.
         throw new Error(
-          `AFIP aprobó la venta, pero falló el guardado local: ${result.message}`,
+          `Falló el guardado en la base de datos: ${result.message}`,
         );
       }
 
@@ -234,8 +251,12 @@ export class SaleSummaryModalComponent {
       // ---------------------------------------------------------
       // PASO 4: IMPRIMIR Y LIMPIAR
       // ---------------------------------------------------------
+      const tituloTicket = afipData
+        ? `¡Factura ${afipData.tipoFactura} N° ${afipData.numeroFactura} Generada!`
+        : '¡Venta (Remito) Guardada!';
+
       const confirmPrint = await Swal.fire({
-        title: `¡Factura ${afipData.tipoFactura} N° ${afipData.numeroFactura} Generada!`,
+        title: tituloTicket,
         text: '¿Deseas imprimir el ticket?',
         icon: 'success',
         showCancelButton: true,
@@ -254,7 +275,7 @@ export class SaleSummaryModalComponent {
           },
           this.payments,
           this.discount(),
-          afipData,
+          //afipData,
         );
         Swal.fire({
           icon: 'info',

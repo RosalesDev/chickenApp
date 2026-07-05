@@ -13,17 +13,18 @@ export class TicketService {
     data: { products: Product[]; total: number },
     payments: PaymentMethod[],
     discount: number = 0,
-    afipData: {
+    /*     afipData: {
       cae: any;
       vencimientoCae: any;
       numeroFactura: any;
       tipoFactura: any;
-    },
+    }, */
     saleDate: string = new Date().toISOString(),
   ) {
     const url = 'http://localhost:3000/print';
     const productList = data.products;
     const dateObject = parseISO(saleDate);
+    //const tituloComprobante = afipData ? `FACTURA ${afipData.tipoFactura} Nro: ${afipData.numeroFactura}` : 'Ticket de venta';
     const ticketData = {
       title: 'Ticket de venta',
       logo: 'logo.png',

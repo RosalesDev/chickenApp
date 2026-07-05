@@ -6,6 +6,7 @@ import {
   ElementRef,
   HostListener,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../services/product.service';
 import { CurrencyPipe, UpperCasePipe } from '@angular/common';
 import { Product } from '../../../../core/models/product-model';
@@ -22,6 +23,7 @@ import { BILLING_TYPE_MODAL_HTML } from './pos.templates';
 @Component({
   selector: 'app-pos',
   imports: [
+    FormsModule,
     CurrencyPipe,
     UpperCasePipe,
     ModalSpinnerComponent,
@@ -64,16 +66,18 @@ export class PosComponent {
     products: any[];
     total: number;
     customer: Customer | null;
+    billingType: 'CONSUMIDOR_FINAL' | 'RESPONSABLE_INSCRIPTO' | 'SIN_FACTURA';
   }>({
     products: [],
     total: 0,
     customer: null,
+    billingType: 'CONSUMIDOR_FINAL',
   }); // Resumen de la venta
   // NUEVAS SIGNALS PARA FACTURACIÓN
-  isPosReady = signal<boolean>(false); // Controla si se muestra la UI
+  isPosReady = signal<boolean>(true); // Controla si se muestra la UI
   billingType = signal<
-    'CONSUMIDOR_FINAL' | 'RESPONSABLE_INSCRIPTO' | 'SIN_FACTURA' | null
-  >(null);
+    'CONSUMIDOR_FINAL' | 'RESPONSABLE_INSCRIPTO' | 'SIN_FACTURA'
+  >('CONSUMIDOR_FINAL');
   customerDocument = signal<string | null>(null); // Guardará el CUIT si aplica
   selectedCustomer: Customer | null = null;
 
@@ -110,14 +114,7 @@ export class PosComponent {
   }
 
   ngOnInit(): void {
-    // 1. Primero lanzamos el modal para elegir el tipo de venta
-    this.promptBillingType().then(() => {
-      // 2. Una vez que el cajero eligió, mostramos la UI
-      this.isPosReady.set(true);
-
-      // 3. Recién ahora cargamos los productos y enfocamos el input
-      this.initializeProducts();
-    });
+    this.initializeProducts();
   }
 
   private initializeProducts(): void {
@@ -151,187 +148,135 @@ export class PosComponent {
     }
   }
 
-  // MÉTODO PARA EL FLUJO DE SWEETALERT
-  async promptBillingType(): Promise<void> {
-    let type:
-      | 'CONSUMIDOR_FINAL'
-      | 'RESPONSABLE_INSCRIPTO'
-      | 'SIN_FACTURA'
-      | null = null;
+  async onBillingTypeChange(
+    newType: 'CONSUMIDOR_FINAL' | 'RESPONSABLE_INSCRIPTO' | 'SIN_FACTURA',
+  ) {
+    // Guardamos el tipo anterior por si el usuario cancela la búsqueda
+    const previousType = this.billingType();
 
-    await Swal.fire({
-      title: 'Nueva Venta',
-      html: BILLING_TYPE_MODAL_HTML,
-      showConfirmButton: false, // Ocultamos el botón "Comenzar" porque elegirán haciendo clic
+    if (newType === 'RESPONSABLE_INSCRIPTO') {
+      // Disparamos la búsqueda de cliente
+      const success = await this.searchCustomerForInvoice();
+      if (success) {
+        this.billingType.set(newType);
+        this.focusBarcodeInput();
+      } else {
+        // Si canceló la búsqueda (cerró el modal), volvemos al select anterior silenciosamente
+        this.billingType.set(null as any);
+        setTimeout(() => this.billingType.set(previousType), 0);
+      }
+    } else {
+      // Si elige Consumidor Final o Sin Factura:
+      // Cambiamos el tipo y limpiamos los datos del cliente, ¡PERO DEJAMOS LOS PRODUCTOS!
+      this.billingType.set(newType);
+      this.customerDocument.set(null);
+      this.selectedCustomer = null;
+      this.focusBarcodeInput();
+    }
+  }
+
+  // Lógica extraída de tu antiguo promptBillingType
+  private async searchCustomerForInvoice(): Promise<boolean> {
+    const { value: searchTerm } = await Swal.fire({
+      title: 'Buscar Cliente (Responsable Inscripto)',
+      input: 'text',
+      inputLabel: 'Ingresá el CUIT o parte de la Razón Social',
+      inputPlaceholder: 'Ej: 3071... o Perez',
       allowOutsideClick: false,
       allowEscapeKey: false,
-      didOpen: () => {
-        Swal.hideLoading(); // Por las dudas, limpiamos fantasmas
-
-        // Agregamos los eventos de clic a cada botón
-        document.getElementById('btn-cf')?.addEventListener('click', () => {
-          type = 'CONSUMIDOR_FINAL';
-          Swal.close();
-        });
-        document.getElementById('btn-ri')?.addEventListener('click', () => {
-          type = 'RESPONSABLE_INSCRIPTO';
-          Swal.close();
-        });
-        document.getElementById('btn-sf')?.addEventListener('click', () => {
-          type = 'SIN_FACTURA';
-          Swal.close();
-        });
+      showCancelButton: true,
+      cancelButtonText: 'Cancelar',
+      confirmButtonText: 'Buscar',
+      inputValidator: (value) => {
+        if (!value || value.trim().length < 3)
+          return 'Ingresá al menos 3 caracteres';
+        return null;
       },
     });
 
-    // Si por alguna razón se cierra sin valor, cortamos la ejecución
-    if (!type) return;
+    if (!searchTerm) return false;
 
-    this.billingType.set(type);
+    Swal.fire({
+      title: 'Buscando...',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+    });
 
-    // FLUJO PARA RESPONSABLE INSCRIPTO
-    if (type === 'RESPONSABLE_INSCRIPTO') {
-      const { value: searchTerm } = await Swal.fire({
-        title: 'Buscar Cliente',
-        input: 'text',
-        inputLabel: 'Ingresá el CUIT o parte del Nombre',
-        inputPlaceholder: 'Ej: 3071... o Perez',
-        allowOutsideClick: false,
-        allowEscapeKey: false,
+    const allCustomers = await this.customerService.getAllCustomers();
+    const isNumeric = /^\d+$/.test(searchTerm.trim());
+    let matches: Customer[] = isNumeric
+      ? allCustomers.filter((c) => c.cuit && c.cuit.includes(searchTerm.trim()))
+      : allCustomers.filter(
+          (c) =>
+            c.name &&
+            c.name.toLowerCase().includes(searchTerm.trim().toLowerCase()),
+        );
+
+    Swal.close();
+
+    if (matches.length > 0) {
+      let selectedId: string | null = null;
+      const listHtml = `
+        <div class="list-group text-start shadow-sm mt-3" style="max-height: 300px; overflow-y: auto;">
+          ${matches
+            .map(
+              (c) => `
+            <button type="button" class="list-group-item list-group-item-action customer-row" data-id="${c.id}">
+              <div class="d-flex w-100 justify-content-between align-items-center">
+                <h6 class="mb-1 fw-bold text-primary">${c.name}</h6>
+                <small class="badge bg-secondary">CUIT: ${c.cuit || 'N/A'}</small>
+              </div>
+              <small class="text-muted"><i class="bi bi-geo-alt"></i> ${c.address || 'Sin dirección registrada'}</small>
+            </button>
+          `,
+            )
+            .join('')}
+        </div>`;
+
+      await Swal.fire({
+        title: 'Seleccionar Cliente',
+        html: listHtml,
         showCancelButton: true,
-        cancelButtonText: 'Volver',
-        confirmButtonText: 'Buscar',
-        inputValidator: (value) => {
-          if (!value || value.trim().length < 3) {
-            return 'Ingresá al menos 3 caracteres para buscar';
-          }
-          return null;
+        cancelButtonText: 'Cancelar',
+        showConfirmButton: false,
+        didOpen: () => {
+          document.querySelectorAll('.customer-row').forEach((row) => {
+            row.addEventListener('click', (e) => {
+              selectedId = (e.currentTarget as HTMLElement).getAttribute(
+                'data-id',
+              );
+              Swal.close();
+            });
+          });
         },
       });
 
-      if (searchTerm) {
-        Swal.fire({
-          title: 'Buscando...',
-          allowOutsideClick: false,
-          didOpen: () => Swal.showLoading(),
-        });
-
-        const allCustomers = await this.customerService.getAllCustomers();
-        const isNumeric = /^\d+$/.test(searchTerm.trim());
-        let matches: Customer[] = [];
-
-        if (isNumeric) {
-          matches = allCustomers.filter(
-            (c) => c.cuit && c.cuit.includes(searchTerm.trim()),
-          );
-        } else {
-          const lowerSearch = searchTerm.trim().toLowerCase();
-          matches = allCustomers.filter(
-            (c) => c.name && c.name.toLowerCase().includes(lowerSearch),
-          );
+      if (selectedId) {
+        const found = matches.find((c) => c.id === selectedId);
+        if (found) {
+          this.selectedCustomer = found;
+          this.customerDocument.set(found.cuit || null);
+          return true;
         }
-
-        Swal.close();
-
-        let selectedCustomer: Customer | undefined = undefined;
-
-        if (matches.length > 0) {
-          // HAY COINCIDENCIAS -> Mostramos la lista interactiva
-          let selectedId: string | null = null;
-
-          // 1. Armamos el HTML de la lista usando clases de Bootstrap
-          // Le agregamos scroll (overflow-y) por si hay muchos resultados
-          const listHtml = `
-            <div class="list-group text-start shadow-sm mt-3" style="max-height: 300px; overflow-y: auto;">
-              ${matches
-                .map(
-                  (c) => `
-                <button type="button" class="list-group-item list-group-item-action customer-row" data-id="${c.id}">
-                  <div class="d-flex w-100 justify-content-between align-items-center">
-                    <h6 class="mb-1 fw-bold text-primary">${c.name}</h6>
-                    <small class="badge bg-secondary">CUIT: ${c.cuit || 'N/A'}</small>
-                  </div>
-                  <small class="text-muted"><i class="bi bi-geo-alt"></i> ${c.address || 'Sin dirección registrada'}</small>
-                </button>
-              `,
-                )
-                .join('')}
-            </div>
-          `;
-
-          // 2. Lanzamos el SweetAlert con la lista
-          await Swal.fire({
-            title: 'Seleccionar Cliente',
-            html: listHtml,
-            showCancelButton: true,
-            cancelButtonText: 'Volver',
-            showConfirmButton: false, // Ocultamos el botón "OK" porque confirmarán haciendo clic en la fila
-            allowOutsideClick: false,
-            didOpen: () => {
-              Swal.hideLoading();
-              // 3. Capturamos los clics en las filas generadas dinámicamente
-              const rows = document.querySelectorAll('.customer-row');
-              rows.forEach((row) => {
-                row.addEventListener('click', (e) => {
-                  // Obtenemos el ID del cliente seleccionado
-                  const target = e.currentTarget as HTMLElement;
-                  selectedId = target.getAttribute('data-id');
-                  Swal.close(); // Cerramos el modal al instante
-                });
-              });
-            },
-          });
-
-          // 4. Verificamos qué sucedió al cerrarse el modal
-          if (selectedId) {
-            // El usuario hizo clic en una fila
-            selectedCustomer = matches.find((c) => c.id === selectedId);
-          } else {
-            // El usuario hizo clic en el botón "Volver"
-            this.billingType.set(null);
-            this.promptBillingType();
-            return;
-          }
-        } else {
-          // CERO COINCIDENCIAS -> Flujo de redirección limpio
-          const result = await Swal.fire({
-            icon: 'warning',
-            title: 'Cliente no encontrado',
-            text: `No encontramos ningún cliente con "${searchTerm}". ¿Deseas registrar uno nuevo?`,
-            showCancelButton: true,
-            confirmButtonText: 'Sí, crear cliente',
-            cancelButtonText: 'Volver a intentar',
-            didOpen: () => {
-              Swal.hideLoading(); // <--- ELIMINA EL SPINNER FANTASMA AQUÍ TAMBIÉN
-            },
-          });
-
-          if (result.isConfirmed) {
-            // Redirigimos al módulo de clientes
-            const queryParams = isNumeric
-              ? { cuit: searchTerm.trim() }
-              : { name: searchTerm.trim() };
-            this.router.navigate(['/home/create-customer'], { queryParams }); // Ajusta la ruta si es necesario
-            return;
-          } else {
-            // Si elige "Volver a intentar", reiniciamos la pregunta
-            this.billingType.set(null);
-            this.promptBillingType();
-            return;
-          }
-        }
-
-        // Si llegó hasta aquí con un cliente válido, seteamos el CUIT para la factura
-        if (selectedCustomer && selectedCustomer.cuit) {
-          this.customerDocument.set(selectedCustomer.cuit);
-          this.selectedCustomer = selectedCustomer;
-        }
-      } else {
-        // Canceló la búsqueda inicial (el primer input)
-        this.billingType.set(null);
-        this.promptBillingType();
-        return;
       }
+      return false; // Canceló en la lista
+    } else {
+      const result = await Swal.fire({
+        icon: 'warning',
+        title: 'Cliente no encontrado',
+        text: `No encontramos ningún cliente con "${searchTerm}". ¿Deseas registrar uno nuevo?`,
+        showCancelButton: true,
+        confirmButtonText: 'Sí, crear cliente',
+        cancelButtonText: 'Cancelar',
+      });
+
+      if (result.isConfirmed) {
+        const queryParams = isNumeric
+          ? { cuit: searchTerm.trim() }
+          : { name: searchTerm.trim() };
+        this.router.navigate(['/home/create-customer'], { queryParams });
+      }
+      return false;
     }
   }
 
@@ -366,6 +311,7 @@ export class PosComponent {
       products: this.productToSaleList(),
       total: this.subtotal(),
       customer: this.selectedCustomer,
+      billingType: this.billingType(),
     }); // Actualiza el resumen de la venta.
   }
   /**
@@ -809,13 +755,18 @@ export class PosComponent {
     // NUEVO: Limpiamos los datos del cliente y el tipo de facturación
     this.selectedCustomer = null;
     this.customerDocument.set(null);
-    this.billingType.set(null);
-    this.currentSaleSummary.set({ products: [], total: 0, customer: null });
+    this.billingType.set('CONSUMIDOR_FINAL');
+    this.currentSaleSummary.set({
+      products: [],
+      total: 0,
+      customer: null,
+      billingType: 'CONSUMIDOR_FINAL',
+    });
 
     this.focusBarcodeInput();
 
     // IMPORTANTE: Volvemos a lanzar el modal inicial para el próximo cliente
-    this.promptBillingType();
+    //this.promptBillingType();
   }
 
   finalizeSale(): void {
