@@ -384,7 +384,7 @@ export class SaleService {
         ...payload,
         isProduction: isProduction,
       };
-      const response = await fetch('http://localhost:3000/api/facturar', {
+      const response = await fetch('http://localhost:3001/api/facturar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -401,6 +401,44 @@ export class SaleService {
       return result;
     } catch (error) {
       console.error('Error en SaleService (AFIP):', error);
+      throw error;
+    }
+  }
+
+  // CONSULTAR FACTURAS
+  async consultInvoiceWithAFIP(
+    ptoVta: number,
+    cbteTipo: number,
+    nroCbte: number,
+  ): Promise<any> {
+    try {
+      // 1. LEER EL FLAG DE ENTORNO DESDE FIRESTORE
+      const configRef = doc(db, 'config', 'arca_config');
+      const configSnap = await getDoc(configRef);
+      const isProduction = configSnap.exists()
+        ? configSnap.data()['isProduction']
+        : false;
+
+      // 2. ENVIAR PETICIÓN GET AL BACKEND
+      const response = await fetch(
+        `http://localhost:3001/api/factura/consultar/${ptoVta}/${cbteTipo}/${nroCbte}?isProduction=${isProduction}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(
+          result.message || result.error || 'Error al consultar comprobante',
+        );
+      }
+
+      return result.data;
+    } catch (error) {
+      console.error('Error al consultar AFIP:', error);
       throw error;
     }
   }

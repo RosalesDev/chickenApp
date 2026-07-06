@@ -117,6 +117,12 @@
               <span class="ms-1 d-none d-sm-inline">Ventas</span>
             </a>
           </li>
+          <li *hasRole="'ADMIN'">
+            <a class="nav-link text-white" routerLink="/home/invoice-query">
+              <i class="bi bi-receipt"></i>
+              <span class="ms-1 d-none d-sm-inline">Comprobantes</span>
+            </a>
+          </li>
         </ul>
       </div>
     </div>

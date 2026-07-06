@@ -6,6 +6,7 @@ import { UnderconstructionpageComponent } from './shared/underconstructionpage/u
 import { authRoleGuard } from './core/guards/auth-role.guard';
 import { SalesComponent } from './features/pos/pages/sales/sales.component';
 import { MainMenuComponent } from './features/pos/pages/home/main-menu/main-menu.component';
+import { InvoiceQueryComponent } from './features/pos/pages/invoice-query/invoice-query.component';
 
 export const routes: Routes = [
   {
@@ -81,6 +82,13 @@ export const routes: Routes = [
         canActivate: [authRoleGuard],
         data: { roles: ['ADMIN'] },
         component: SalesComponent,
+      },
+      {
+        path: 'invoice-query',
+        title: 'Consulta de Comprobantes',
+        canActivate: [authRoleGuard],
+        data: { roles: ['ADMIN'] },
+        component: InvoiceQueryComponent,
       },
     ],
   },

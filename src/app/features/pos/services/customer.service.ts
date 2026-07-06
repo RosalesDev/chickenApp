@@ -17,14 +17,12 @@ export class CustomerService {
   // Agrega esto en tu CustomerService
   async getAfipData(cuit: string): Promise<any> {
     try {
-      const configRef = doc(db, 'config', 'arca_config');
-      const configSnap = await getDoc(configRef);
-      const isProduction = configSnap.exists()
-        ? configSnap.data()['isProduction']
-        : false;
+      //const configRef = doc(db, 'config', 'arca_config');
+      //const configSnap = await getDoc(configRef);
+      const isProduction = true;
       // Ajusta el puerto y la URL según tu backend de Node
       const response = await fetch(
-        `http://localhost:3000/api/afip/padron/${cuit}?isProduction=${isProduction}`,
+        `http://localhost:3001/api/afip/padron/${cuit}?isProduction=${isProduction}`,
       );
       const result = await response.json();
 
