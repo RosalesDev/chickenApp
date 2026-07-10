@@ -190,6 +190,8 @@ export class SaleSummaryModalComponent {
 
       console.log('Cliente para la venta:', currentCustomer);
 
+      let tituloTicket: string = '¡Venta (Remito) Guardada!';
+
       // 2. FACTURAR EN AFIP (¡SOLO SI NO ES REMITO!)
       if (tipoFacturacion !== 'SIN_FACTURA') {
         Swal.update({ title: 'Generando comprobante fiscal...' });
@@ -204,6 +206,7 @@ export class SaleSummaryModalComponent {
           numeroFactura: afipResponse.numeroFactura,
           tipoFactura: afipResponse.tipoFactura,
         };
+        tituloTicket = `¡Factura ${afipData.tipoFactura} N° ${afipData.numeroFactura} Generada!`;
       }
 
       //Guardamos la venta en Firebase, incluyendo los datos de AFIP si los hay
@@ -251,10 +254,6 @@ export class SaleSummaryModalComponent {
       // ---------------------------------------------------------
       // PASO 4: IMPRIMIR Y LIMPIAR
       // ---------------------------------------------------------
-      const tituloTicket = afipData
-        ? `¡Factura ${afipData.tipoFactura} N° ${afipData.numeroFactura} Generada!`
-        : '¡Venta (Remito) Guardada!';
-
       const confirmPrint = await Swal.fire({
         title: tituloTicket,
         text: '¿Deseas imprimir el ticket?',

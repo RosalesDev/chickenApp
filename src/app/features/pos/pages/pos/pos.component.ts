@@ -18,7 +18,6 @@ import Swal from 'sweetalert2';
 import { CustomerService } from '../../services/customer.service';
 import { Customer } from '../../../../core/models/customer-model';
 import { Router } from '@angular/router';
-import { BILLING_TYPE_MODAL_HTML } from './pos.templates';
 
 @Component({
   selector: 'app-pos',

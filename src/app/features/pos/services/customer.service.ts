@@ -28,13 +28,13 @@ export class CustomerService {
 
       if (!result.success) {
         throw new Error(
-          result.error || result.message || 'Error al buscar en AFIP',
+          result.error || result.message || 'Error al buscar en ARCA',
         );
       }
 
       return result.data;
     } catch (error) {
-      console.error('Error en CustomerService (AFIP):', error);
+      console.error('Error en CustomerService (ARCA):', error);
       throw error;
     }
   }

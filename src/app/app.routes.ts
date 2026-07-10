@@ -24,7 +24,10 @@ export const routes: Routes = [
     title: 'ChickenApp - Menu',
     canActivate: [authRoleGuard],
     data: { roles: ['ADMIN'] },
-    component: MainMenuComponent,
+    loadComponent: () =>
+      import('./features/pos/pages/home/main-menu/main-menu.component').then(
+        (m) => m.MainMenuComponent,
+      ),
   },
   {
     path: 'under-construction',
@@ -36,14 +39,20 @@ export const routes: Routes = [
     title: 'ChickenApp Home',
     canActivate: [authRoleGuard],
     data: { roles: ['ADMIN', 'POS_USER'] },
-    component: HomeComponent,
+    loadComponent: () =>
+      import('./features/pos/pages/home/home.component').then(
+        (m) => m.HomeComponent,
+      ),
     children: [
       {
         path: 'pos',
         title: 'ChickenApp POS',
-        component: PosComponent,
         canActivate: [authRoleGuard],
         data: { roles: ['ADMIN', 'POS_USER'] },
+        loadComponent: () =>
+          import('./features/pos/pages/pos/pos.component').then(
+            (m) => m.PosComponent,
+          ),
       },
       {
         path: 'products',
@@ -81,14 +90,20 @@ export const routes: Routes = [
         title: 'Ventas',
         canActivate: [authRoleGuard],
         data: { roles: ['ADMIN'] },
-        component: SalesComponent,
+        loadComponent: () =>
+          import('./features/pos/pages/sales/sales.component').then(
+            (m) => m.SalesComponent,
+          ),
       },
       {
         path: 'invoice-query',
         title: 'Consulta de Comprobantes',
         canActivate: [authRoleGuard],
         data: { roles: ['ADMIN'] },
-        component: InvoiceQueryComponent,
+        loadComponent: () =>
+          import('./features/pos/pages/invoice-query/invoice-query.component').then(
+            (m) => m.InvoiceQueryComponent,
+          ),
       },
     ],
   },

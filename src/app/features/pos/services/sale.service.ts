@@ -394,13 +394,13 @@ export class SaleService {
 
       if (!result.success) {
         throw new Error(
-          result.error || result.detalle || 'Error al facturar en AFIP',
+          result.error || result.detalle || 'Error al facturar en ARCO',
         );
       }
 
       return result;
     } catch (error) {
-      console.error('Error en SaleService (AFIP):', error);
+      console.error('Error en SaleService (ARCA):', error);
       throw error;
     }
   }
@@ -432,13 +432,13 @@ export class SaleService {
 
       if (!result.success) {
         throw new Error(
-          result.message || result.error || 'Error al consultar comprobante',
+          result.detalle || result.error || 'Error al consultar comprobante',
         );
       }
 
       return result.data;
     } catch (error) {
-      console.error('Error al consultar AFIP:', error);
+      console.error('Error al consultar ARCA:', error);
       throw error;
     }
   }
