@@ -1,5 +1,12 @@
 import { Injectable } from '@angular/core';
-import { collection, getDocs, addDoc, doc, getDoc } from 'firebase/firestore';
+import {
+  collection,
+  getDocs,
+  addDoc,
+  doc,
+  getDoc,
+  updateDoc,
+} from 'firebase/firestore';
 import { Customer } from '../../../core/models/customer-model';
 import { db } from '../../../config/firebase.config';
 
@@ -14,7 +21,27 @@ export class CustomerService {
 
   constructor() {}
 
-  // Agrega esto en tu CustomerService
+  async updateCustomer(id: string, data: Partial<Customer>): Promise<void> {
+    try {
+      const docRef = doc(db, this.collectionName, id);
+      await updateDoc(docRef, data);
+
+      // Actualizar la caché local
+      if (this.cachedCustomers) {
+        const index = this.cachedCustomers.findIndex((c) => c.id === id);
+        if (index !== -1) {
+          this.cachedCustomers[index] = {
+            ...this.cachedCustomers[index],
+            ...data,
+          };
+        }
+      }
+    } catch (error) {
+      console.error('Error actualizando cliente:', error);
+      throw error;
+    }
+  }
+
   async getAfipData(cuit: string): Promise<any> {
     try {
       //const configRef = doc(db, 'config', 'arca_config');

@@ -1,0 +1,275 @@
+<div class="container mt-4">
+  <!-- Cabecera y Buscador -->
+  <div class="row mb-3 align-items-center">
+    <div class="col-md-4">
+      <h3 class="mb-0 fw-bold">
+        <i class="bi bi-people-fill text-primary"></i> Clientes
+      </h3>
+    </div>
+    <div class="col-md-4">
+      <div class="input-group shadow-sm">
+        <span class="input-group-text bg-white border-end-0"
+          ><i class="bi bi-search text-muted"></i
+        ></span>
+        <input
+          type="text"
+          class="form-control border-start-0"
+          placeholder="Buscar por Nombre o CUIT..."
+          [(ngModel)]="searchQuery"
+          (input)="searchCustomers()"
+        />
+      </div>
+    </div>
+    <div class="col-md-4 text-end">
+      <button class="btn btn-primary shadow-sm fw-bold" (click)="openModal()">
+        <i class="bi bi-plus-lg"></i> Nuevo Cliente
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabla de Clientes -->
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <!-- Agregamos table-layout: fixed para forzar el respeto de los anchos -->
+        <table
+          class="table table-hover align-middle mb-0"
+          style="table-layout: fixed; width: 100%"
+        >
+          <thead class="table-light">
+            <tr>
+              <th style="width: 28%">Razón Social / Nombre</th>
+              <th style="width: 14%">CUIT</th>
+              <th style="width: 15%">Cond. IVA</th>
+              <th style="width: 25%">Dirección</th>
+              <th style="width: 8%" class="text-center">Estado</th>
+              <th style="width: 10%" class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (isLoading) {
+              <tr>
+                <td colspan="6" class="text-center py-4">
+                  <span class="spinner-border text-primary"></span> Cargando...
+                </td>
+              </tr>
+            } @else if (filteredCustomers.length === 0) {
+              <tr>
+                <td colspan="6" class="text-center text-muted py-4">
+                  No se encontraron clientes.
+                </td>
+              </tr>
+            } @else {
+              @for (c of filteredCustomers; track c.id) {
+                <tr>
+                  <!-- text-wrap y text-break obligan al texto a bajar de renglón si es muy largo -->
+                  <td class="fw-bold text-wrap text-break">{{ c.name }}</td>
+                  <td>{{ c.cuit || "-" }}</td>
+                  <td>
+                    <span class="badge bg-secondary text-wrap">{{
+                      c.iva_cond
+                    }}</span>
+                  </td>
+                  <td class="text-wrap text-break">{{ c.address || "-" }}</td>
+                  <td class="text-center">
+                    <span
+                      class="badge"
+                      [ngClass]="
+                        c.status === 'ACT'
+                          ? 'text-bg-success'
+                          : 'text-bg-danger'
+                      "
+                    >
+                      {{ c.status === "ACT" ? "Activo" : "Inactivo" }}
+                    </span>
+                  </td>
+                  <td>
+                    <!-- Agrupamos los botones en un d-flex flex-nowrap para que nunca se apilen verticalmente -->
+                    <div class="d-flex justify-content-end gap-2 flex-nowrap">
+                      <button
+                        class="btn btn-sm btn-outline-primary"
+                        (click)="openModal(c)"
+                        title="Editar"
+                      >
+                        <i class="bi bi-pencil"></i>
+                      </button>
+
+                      <button
+                        class="btn btn-sm"
+                        [ngClass]="
+                          c.status === 'ACT'
+                            ? 'btn-outline-danger'
+                            : 'btn-outline-success'
+                        "
+                        (click)="toggleCustomerStatus(c)"
+                        [title]="
+                          c.status === 'ACT' ? 'Dar de baja' : 'Reactivar'
+                        "
+                      >
+                        <i
+                          class="bi"
+                          [ngClass]="
+                            c.status === 'ACT'
+                              ? 'bi-person-dash'
+                              : 'bi-person-check'
+                          "
+                        ></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL BOOTSTRAP CONTROLADO POR ANGULAR -->
+<!-- ============================================== -->
+@if (isModalOpen) {
+  <!-- Overlay oscuro -->
+  <div class="modal-backdrop fade show"></div>
+
+  <!-- Contenedor del modal -->
+  <div
+    class="modal fade show d-block"
+    tabindex="-1"
+    role="dialog"
+    aria-modal="true"
+    style="background-color: rgba(0, 0, 0, 0.5)"
+  >
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold">
+            <i
+              class="bi"
+              [ngClass]="isEditing ? 'bi-pencil-square' : 'bi-person-plus'"
+            ></i>
+            {{ isEditing ? "Editar Cliente" : "Nuevo Cliente" }}
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            aria-label="Close"
+            (click)="closeModal()"
+          ></button>
+        </div>
+
+        <form [formGroup]="customerForm" (ngSubmit)="saveCustomer()">
+          <div class="modal-body">
+            <!-- Fila 1: CUIT con botón de ARCA -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-bold">CUIT</label>
+                <div class="input-group">
+                  <input
+                    type="text"
+                    class="form-control"
+                    formControlName="cuit"
+                    placeholder="Ej: 30123456789"
+                    maxlength="11"
+                  />
+                  <button
+                    type="button"
+                    class="btn btn-info text-white fw-bold"
+                    (click)="searchAfip()"
+                    title="Autocompletar con AFIP"
+                  >
+                    <i class="bi bi-cloud-arrow-down-fill"></i> ARCA
+                  </button>
+                </div>
+                @if (customerForm.get("cuit")?.hasError("pattern")) {
+                  <small class="text-danger">Solo números permitidos</small>
+                }
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Condición de IVA</label>
+                <select class="form-select" formControlName="iva_cond">
+                  <option value="Consumidor final">Consumidor final</option>
+                  <option value="Responsable Inscripto">
+                    Responsable Inscripto
+                  </option>
+                  <option value="Monotributo">Monotributo</option>
+                  <option value="Exento">Exento</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Fila 2: Razón Social -->
+            <div class="mb-3">
+              <label class="form-label fw-bold"
+                >Razón Social / Nombre Completo *</label
+              >
+              <input
+                type="text"
+                class="form-control"
+                formControlName="name"
+                placeholder="Ej: Perez Juan"
+              />
+              @if (
+                customerForm.get("name")?.invalid &&
+                customerForm.get("name")?.touched
+              ) {
+                <small class="text-danger">El nombre es obligatorio.</small>
+              }
+            </div>
+
+            <!-- Fila 3: Dirección -->
+            <div class="mb-3">
+              <label class="form-label fw-bold">Dirección Fiscal</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="address"
+                placeholder="Calle, Número, Localidad"
+              />
+            </div>
+
+            <!-- Fila 4: Estado y Saldo -->
+            <div class="row">
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Estado</label>
+                <select class="form-select" formControlName="status">
+                  <option value="ACT">Activo</option>
+                  <option value="INA">Inactivo</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Saldo Inicial ($)</label>
+                <input
+                  type="number"
+                  class="form-control bg-light"
+                  formControlName="balance"
+                  [readonly]="isEditing"
+                  title="Solo modificable al crear"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer bg-light">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="closeModal()"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary fw-bold"
+              [disabled]="customerForm.invalid"
+            >
+              <i class="bi bi-save"></i> Guardar Cliente
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}

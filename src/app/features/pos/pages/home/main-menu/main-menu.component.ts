@@ -38,7 +38,7 @@ export class MainMenuComponent {
     },
     {
       title: 'Clientes',
-      route: '/under-construction',
+      route: '/home/customers',
       icon: 'bi-people', // Ícono para Clientes
     },
     {

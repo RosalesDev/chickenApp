@@ -30,11 +30,6 @@ export const routes: Routes = [
       ),
   },
   {
-    path: 'under-construction',
-    title: 'Página en construcción',
-    component: UnderconstructionpageComponent,
-  },
-  {
     path: 'home',
     title: 'ChickenApp Home',
     canActivate: [authRoleGuard],
@@ -65,6 +60,16 @@ export const routes: Routes = [
         //canActivate: [authGuard],
       },
       {
+        path: 'customers',
+        title: 'Clientes',
+        canActivate: [authRoleGuard],
+        data: { roles: ['ADMIN'] },
+        loadComponent: () =>
+          import('./features/pos/pages/customer/customer.component').then(
+            (m) => m.CustomersComponent,
+          ),
+      },
+      {
         path: 'create-product',
         title: 'Nuevo Producto',
         canActivate: [authRoleGuard],
@@ -81,7 +86,7 @@ export const routes: Routes = [
         canActivate: [authRoleGuard],
         data: { roles: ['ADMIN', 'CAJERO'] }, // Ajusta los roles según necesites
         loadComponent: () =>
-          import('./features/pos/pages/customers/components/create-customer/create-customer.component').then(
+          import('./features/pos/pages/customer/components/create-customer/create-customer.component').then(
             (m) => m.CreateCustomerComponent,
           ),
       },
