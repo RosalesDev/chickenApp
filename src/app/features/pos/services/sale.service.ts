@@ -371,7 +371,7 @@ export class SaleService {
   }): Promise<any> {
     try {
       // 1. LEER EL FLAG DE ENTORNO DESDE FIRESTORE
-      const configRef = doc(db, 'config', 'arca_config');
+      const configRef = doc(db, 'arca', 'arca_config');
       const configSnap = await getDoc(configRef);
 
       // Si no existe el documento, por seguridad asumimos que es Homologación (false)
@@ -413,7 +413,7 @@ export class SaleService {
   ): Promise<any> {
     try {
       // 1. LEER EL FLAG DE ENTORNO DESDE FIRESTORE
-      const configRef = doc(db, 'config', 'arca_config');
+      const configRef = doc(db, 'arca', 'arca_config');
       const configSnap = await getDoc(configRef);
       const isProduction = configSnap.exists()
         ? configSnap.data()['isProduction']
