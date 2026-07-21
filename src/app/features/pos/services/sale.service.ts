@@ -388,6 +388,7 @@ export class SaleService {
       const finalPayload = {
         ...payload,
         isProduction: isProduction,
+        puntoVenta: 2,
       };
       const response = await fetch('http://localhost:3001/api/facturar', {
         method: 'POST',
