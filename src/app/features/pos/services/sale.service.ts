@@ -379,6 +379,11 @@ export class SaleService {
         ? configSnap.data()['isProduction']
         : false;
 
+      console.log(
+        'isProduction flag from Firestore in billWithAFIP:',
+        isProduction,
+      );
+
       // 2. ADJUNTAR EL FLAG AL PAQUETE
       const finalPayload = {
         ...payload,
@@ -387,7 +392,7 @@ export class SaleService {
       const response = await fetch('http://localhost:3001/api/facturar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(finalPayload),
       });
 
       const result = await response.json();

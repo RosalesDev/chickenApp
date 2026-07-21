@@ -16,7 +16,7 @@ export class InvoiceQueryComponent {
   private saleService = inject(SaleService);
 
   // Variables del formulario
-  ptoVta = 1;
+  ptoVta = 2;
   cbteTipo = 6; // Por defecto Factura B
   nroCbte: number | null = null;
 
